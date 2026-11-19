@@ -1,4 +1,5 @@
-import { SkinItem } from "./skins";
+import { SkinItem, MOCK_SKINS } from "./skins";
+import { withMockMode } from "./mock-mode";
 
 export type InventoryItem = {
   id: string;
@@ -8,23 +9,36 @@ export type InventoryItem = {
   status: "active" | "upgraded" | "destroyed";
 };
 
-// ЗАГЛУШКА: реалізація на кроці 13
+let userBalances: Record<string, number> = {
+  "user-1": 1000,
+  "demo-player": 24860,
+};
+
+let userInventories: InventoryItem[] = [
+  { id: "inv-1", userId: "user-1", skin: MOCK_SKINS[0], acquiredAt: "2026-11-14", status: "active" },
+  { id: "inv-2", userId: "user-1", skin: MOCK_SKINS[4], acquiredAt: "2026-11-14", status: "active" },
+  { id: "inv-demo-1", userId: "demo-player", skin: MOCK_SKINS[2], acquiredAt: "2026-11-10", status: "active" },
+  { id: "inv-demo-2", userId: "demo-player", skin: MOCK_SKINS[3], acquiredAt: "2026-11-12", status: "active" },
+];
+
 export async function listUserInventory(userId: string): Promise<InventoryItem[]> {
-  return [];
+  const items = userInventories.filter((i) => i.userId === userId && i.status === "active");
+  return withMockMode(items);
 }
 
-// ЗАГЛУШКА: реалізація на кроці 13
 export async function getUserBalance(userId: string): Promise<number> {
-  return 0;
+  return userBalances[userId] ?? 1000;
 }
 
-// ЗАГЛУШКА: реалізація на кроці 13
 export async function acquireSkin(userId: string, skinId: string): Promise<InventoryItem> {
-  return {
-    id: "",
+  const skin = MOCK_SKINS.find((s) => s.id === skinId) || MOCK_SKINS[0];
+  const newItem: InventoryItem = {
+    id: "inv-" + Date.now(),
     userId,
-    skin: { id: skinId, name: "", weapon: "", category: "", rarity: "", price: 0, image: "" },
+    skin,
     acquiredAt: new Date().toISOString(),
     status: "active",
   };
+  userInventories.push(newItem);
+  return newItem;
 }
