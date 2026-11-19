@@ -1,0 +1,88 @@
+
+> aidevcourse@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 /workspaces/Skins-Upgrader-ai-project
+
+ ❯ tests/upgrader.test.ts (4 tests | 4 failed) 12ms
+   × GoiCoins Skin Simulator - Критерії приймання MVP > Ф1.1: новий користувач має стартовий баланс 1000 GoiCoins 8ms
+     → expected +0 to be 1000 // Object.is equality
+   × GoiCoins Skin Simulator - Критерії приймання MVP > Ф2.1: придбання скіна додає його до інвентаря гравця 1ms
+     → expected 0 to be greater than 0
+   × GoiCoins Skin Simulator - Критерії приймання MVP > Ф3.1: розрахунок шансу апгрейду повертає коректний відсоток 1ms
+     → expected +0 to be 50 // Object.is equality
+   × GoiCoins Skin Simulator - Критерії приймання MVP > Ф3.3: запуск апгрейду повертає розрахований результат та повідомлення 1ms
+     → expected '' not to be '' // Object.is equality
+ ✓ tests/smoke.test.ts (1 test) 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/upgrader.test.ts > GoiCoins Skin Simulator - Критерії приймання MVP > Ф1.1: новий користувач має стартовий баланс 1000 GoiCoins
+AssertionError: expected +0 to be 1000 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1000[39m
+[31m+ 0[39m
+
+ ❯ tests/upgrader.test.ts:8:21
+      6|   it("Ф1.1: новий користувач має стартовий баланс 1000 GoiCoins", asyn…
+      7|     const balance = await getUserBalance("user-1");
+      8|     expect(balance).toBe(1000);
+       |                     ^
+      9|   });
+     10| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  tests/upgrader.test.ts > GoiCoins Skin Simulator - Критерії приймання MVP > Ф2.1: придбання скіна додає його до інвентаря гравця
+AssertionError: expected 0 to be greater than 0
+ ❯ tests/upgrader.test.ts:14:26
+     12|     await acquireSkin("user-1", "skin-ak47");
+     13|     const items = await listUserInventory("user-1");
+     14|     expect(items.length).toBeGreaterThan(0);
+       |                          ^
+     15|   });
+     16| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  tests/upgrader.test.ts > GoiCoins Skin Simulator - Критерії приймання MVP > Ф3.1: розрахунок шансу апгрейду повертає коректний відсоток
+AssertionError: expected +0 to be 50 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 50[39m
+[31m+ 0[39m
+
+ ❯ tests/upgrader.test.ts:19:20
+     17|   it("Ф3.1: розрахунок шансу апгрейду повертає коректний відсоток", as…
+     18|     const chance = await calculateUpgradeChance(100, 200);
+     19|     expect(chance).toBe(50);
+       |                    ^
+     20|   });
+     21| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  tests/upgrader.test.ts > GoiCoins Skin Simulator - Критерії приймання MVP > Ф3.3: запуск апгрейду повертає розрахований результат та повідомлення
+AssertionError: expected '' not to be '' // Object.is equality
+ ❯ tests/upgrader.test.ts:24:32
+     22|   it("Ф3.3: запуск апгрейду повертає розрахований результат та повідом…
+     23|     const result = await executeUpgrade("user-1", "inv-1", "skin-howl"…
+     24|     expect(result.message).not.toBe("");
+       |                                ^
+     25|     expect(result.chance).toBeGreaterThan(0);
+     26|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 1 passed (5)
+   Start at  17:38:12
+   Duration  552ms (transform 56ms, setup 0ms, collect 65ms, tests 15ms, environment 0ms, prepare 120ms)
+
