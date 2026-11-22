@@ -1,0 +1,21 @@
+
+> aidevcourse@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 /workspaces/Skins-Upgrader-ai-project
+
+ ✓ tests/actions-skins.test.ts (3 tests) 2145ms
+   ✓ точки доступу: скіни каталогу > успішний виклик: гравець додає скін у каталог, і він є в базі  1217ms
+   ✓ точки доступу: скіни каталогу > чужий запис: акаунт Б не бачить і не видаляє скін акаунта А  810ms
+ ✓ tests/db-skins.test.ts (3 tests) 856ms
+   ✓ операції зі скінами в базі Supabase > створений скін читається назад  435ms
+   ✓ операції зі скінами в базі Supabase > видалений скін не знаходиться  359ms
+ ✓ tests/smoke.test.ts (1 test) 253ms
+ ✓ tests/upgrader.test.ts (4 tests) 256ms
+
+ Test Files  4 passed (4)
+      Tests  11 passed (11)
+   Start at  23:15:44
+   Duration  4.90s (transform 118ms, setup 372ms, collect 121ms, tests 3.51s, environment 1ms, prepare 241ms)
+
