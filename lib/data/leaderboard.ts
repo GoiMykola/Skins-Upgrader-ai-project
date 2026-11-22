@@ -1,5 +1,3 @@
-import { withMockMode } from "./mock-mode";
-
 export type LeaderboardEntry = {
   rank: number;
   userId: string;
@@ -10,13 +8,10 @@ export type LeaderboardEntry = {
   totalValue: number;
 };
 
-const MOCK_LEADERBOARD: LeaderboardEntry[] = [
-  { rank: 1, userId: "demo-player", userName: "demo-player", userAvatar: "D", tier: "Еліта", skinsCount: 18, totalValue: 24860 },
-  { rank: 2, userId: "kira", userName: "Kira.exe", userAvatar: "K", tier: "Майстер", skinsCount: 14, totalValue: 19420 },
-  { rank: 3, userId: "v1per", userName: "v1per", userAvatar: "V", tier: "Майстер", skinsCount: 12, totalValue: 16890 },
-  { rank: 4, userId: "nova", userName: "n0va", userAvatar: "N", tier: "Ветеран", skinsCount: 11, totalValue: 12740 },
-];
-
 export async function listLeaderboard(): Promise<LeaderboardEntry[]> {
-  return withMockMode(MOCK_LEADERBOARD);
+  return [
+    { rank: 1, userId: "user-top-1", userName: "s1mple_fan", userAvatar: "https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=120&auto=format&fit=crop&q=80", tier: "Global Elite", skinsCount: 42, totalValue: 84200 },
+    { rank: 2, userId: "user-top-2", userName: "b1t_junior", userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80", tier: "Supreme", skinsCount: 31, totalValue: 56100 },
+    { rank: 3, userId: "user-top-3", userName: "m0NESY_peek", userAvatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=120&auto=format&fit=crop&q=80", tier: "Legendary Eagle", skinsCount: 19, totalValue: 31400 },
+  ];
 }

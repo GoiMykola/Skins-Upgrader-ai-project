@@ -1,5 +1,3 @@
-import { withMockMode } from "./mock-mode";
-
 export type SkinItem = {
   id: string;
   name: string;
@@ -19,11 +17,4 @@ export const MOCK_SKINS: SkinItem[] = [
   { id: "skin-ak47-case", name: "Поверхневий гарт", weapon: "AK-47", category: "Штурмові гвинтівки", rarity: "Засекречена", price: 2130, image: "blue" },
 ];
 
-export async function listSkins(): Promise<SkinItem[]> {
-  return withMockMode(MOCK_SKINS);
-}
-
-export async function getSkinById(id: string): Promise<SkinItem | null> {
-  const skins = await listSkins();
-  return skins.find((s) => s.id === id) || null;
-}
+export { listSkins, getSkin, getSkin as getSkinById, createSkin, deleteSkin } from "./db/skins";

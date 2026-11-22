@@ -1,5 +1,4 @@
 import { SkinItem, MOCK_SKINS } from "./skins";
-import { withMockMode } from "./mock-mode";
 
 export type InventoryItem = {
   id: string;
@@ -21,12 +20,11 @@ let userInventories: InventoryItem[] = [
   { id: "inv-demo-2", userId: "demo-player", skin: MOCK_SKINS[3], acquiredAt: "2026-11-12", status: "active" },
 ];
 
-export async function listUserInventory(userId: string): Promise<InventoryItem[]> {
-  const items = userInventories.filter((i) => i.userId === userId && i.status === "active");
-  return withMockMode(items);
+export async function listUserInventory(userId: string = "user-1"): Promise<InventoryItem[]> {
+  return userInventories.filter((i) => i.userId === userId && i.status === "active");
 }
 
-export async function getUserBalance(userId: string): Promise<number> {
+export async function getUserBalance(userId: string = "user-1"): Promise<number> {
   return userBalances[userId] ?? 1000;
 }
 

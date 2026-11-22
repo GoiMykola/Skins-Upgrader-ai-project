@@ -1,5 +1,5 @@
-import type { SkinItem } from "@/lib/data/skins";
 import { db } from "./client";
+import type { SkinItem } from "../skins";
 
 type SkinRow = {
   id: string;
