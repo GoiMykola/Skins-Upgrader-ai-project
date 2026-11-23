@@ -22,7 +22,7 @@ import {
   readCache,
   writeCache,
 } from "@/lib/data/db/ai-guard";
-import { createSkinRecord } from "@/lib/data/db/skins";
+import { createSkin } from "@/lib/data/db/skins";
 
 // Нормалізація вводу для стабільного ключа кешу
 function normalizePrompt(prompt: string): string {
@@ -71,7 +71,14 @@ export async function createAiSkinAction(
       if (checked.ok) {
         // Фіксуємо безкоштовний виклик із кешу (не витрачає ліміти)
         await recordCall(true);
-        const skin = await createSkinRecord(checked.value);
+        const skin = await createSkin({
+          name: checked.value.name,
+          weapon: checked.value.weapon,
+          category: checked.value.category,
+          rarity: checked.value.rarity,
+          price: checked.value.price,
+          image: "neon",
+        });
         revalidatePath("/catalog");
         return {
           status: 201,
@@ -84,7 +91,7 @@ export async function createAiSkinAction(
     console.error("Помилка читання кешу:", err);
   }
 
-  // 4. Перевірка лімітів викликів
+  // 4. Перевірка лімітів викликів (Крок 13)
   const userLimit = Number(process.env.AI_USER_LIMIT_PER_HOUR || 20);
   const appLimit = Number(process.env.AI_APP_LIMIT_PER_DAY || 100);
 
@@ -171,7 +178,14 @@ export async function createAiSkinAction(
   }
 
   // 8. Створення скіна в базі під обліковим записом гравця
-  const skin = await createSkinRecord(validSkin);
+  const skin = await createSkin({
+    name: validSkin.name,
+    weapon: validSkin.weapon,
+    category: validSkin.category,
+    rarity: validSkin.rarity,
+    price: validSkin.price,
+    image: "neon",
+  });
   revalidatePath("/catalog");
 
   return {
