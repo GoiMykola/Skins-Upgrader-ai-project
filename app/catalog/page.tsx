@@ -1,43 +1,52 @@
-import Link from "next/link";
-import SkinTile from "../components/skin-tile";
-import { skins } from "../data";
+import { listSkins } from "@/lib/data/skins";
+import { AiSkinWorkshop } from "@/components/ai-skin-workshop";
 
-export default function CatalogPage() {
+export const dynamic = "force-dynamic";
+
+export default async function CatalogPage() {
+  const skins = await listSkins();
+
   return (
-    <div className="mx-auto max-w-7xl px-5 pb-16 pt-10 lg:px-8">
-      <div className="flex flex-col justify-between gap-5 border-b border-white/[0.07] pb-7 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300">Armory · 06 предметів</p>
-          <h1 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">Каталог скінів</h1>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-slate-400">
-            Вибирай наступний предмет для колекції. Ціни та залишки — демонстраційні.
+    <main className="min-h-screen bg-black text-white px-4 py-10 sm:px-8">
+      <div className="mx-auto max-w-6xl">
+        {/* Заголовок */}
+        <div className="mb-8 text-center sm:text-left">
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
+            Каталог скінів
+          </h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            Обирай скіни для своєї колекції або створюй власні за допомогою штучного інтелекту.
           </p>
         </div>
-        <Link href="/inventory" className="text-sm font-semibold text-slate-300 transition hover:text-amber-200">
-          Перейти до інвентаря <span aria-hidden="true">→</span>
-        </Link>
+
+        {/* ШІ-Майстерня */}
+        <AiSkinWorkshop />
+
+        {/* Сітка скінів */}
+        <h3 className="mb-4 text-xl font-bold text-white">Доступні скіни ({skins.length})</h3>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {skins.map((skin) => (
+            <div
+              key={skin.id}
+              className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 transition-all hover:border-zinc-700 hover:bg-zinc-900"
+            >
+              <div className="aspect-video w-full overflow-hidden rounded-xl bg-zinc-800 flex items-center justify-center">
+                <span className="text-3xl font-black text-zinc-700 uppercase group-hover:scale-110 transition-transform">
+                  {skin.weapon.slice(0, 3)}
+                </span>
+              </div>
+              <div className="mt-4">
+                <span className="text-xs font-semibold text-amber-400">{skin.rarity}</span>
+                <h4 className="font-bold text-white">{skin.name}</h4>
+                <p className="text-xs text-zinc-400">{skin.weapon} · {skin.category}</p>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="font-extrabold text-amber-500">{skin.price} GC</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-bold text-[#211407]">Усі предмети</span>
-        {["Штурмові гвинтівки", "Снайперські", "Ножі"].map((filter) => (
-          <span key={filter} className="rounded-lg border border-white/[0.07] px-3 py-2 text-xs font-medium text-slate-500">
-            {filter}
-          </span>
-        ))}
-        <span className="ml-auto rounded-lg border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-xs text-slate-400">
-          Баланс: <strong className="font-mono text-amber-200">1 000 GC</strong>
-        </span>
-      </div>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {skins.map((skin) => (
-          <SkinTile key={skin.finish} skin={skin} action="Отримати" />
-        ))}
-      </div>
-      <div className="mt-8 rounded-2xl border border-violet-300/10 bg-violet-300/[0.04] p-5 text-sm text-slate-400">
-        <span className="font-semibold text-violet-200">Порада:</span> спершу поповни колекцію, а потім переходь до апгрейду.
-        {" "}
-        <Link href="/" className="font-semibold text-violet-200 hover:text-white">Спробувати апгрейдер →</Link>
-      </div>
-    </div>
+    </main>
   );
 }
