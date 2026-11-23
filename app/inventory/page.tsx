@@ -2,19 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { formatCoins, type Skin } from "@/app/data";
+import { formatCoins } from "@/app/data";
 import SkinTile from "@/app/components/skin-tile";
-import { getStoredInventory, getStoredBalance } from "@/lib/inventory-storage";
+import { getStoredInventory, getStoredBalance, type InventoryItem } from "@/lib/inventory-storage";
 
 export default function InventoryPage() {
-  const [inventory, setInventory] = useState<Skin[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [balance, setBalance] = useState(1000);
 
   useEffect(() => {
     setInventory(getStoredInventory());
     setBalance(getStoredBalance());
 
-    const handleInv = (e: CustomEvent<Skin[]>) => {
+    const handleInv = (e: CustomEvent<InventoryItem[]>) => {
       if (e.detail) setInventory(e.detail);
     };
     const handleBal = (e: CustomEvent<number>) => {
@@ -33,7 +33,6 @@ export default function InventoryPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      {/* Профіль гравця з живим балансом */}
       <div className="mb-10 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0e111a] p-6 sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -67,7 +66,6 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Список предметів */}
       <div>
         <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
           <h2 className="text-xl font-bold text-white">
@@ -81,8 +79,8 @@ export default function InventoryPage() {
           </Link>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {inventory.map((skin, idx) => (
-            <SkinTile key={`${skin.finish}-${idx}`} skin={skin} action="Апгрейдити" href="/" />
+          {inventory.map((skin) => (
+            <SkinTile key={`inventory-tile-${skin.instanceId}`} skin={skin} action="Апгрейдити" href="/" />
           ))}
         </div>
       </div>

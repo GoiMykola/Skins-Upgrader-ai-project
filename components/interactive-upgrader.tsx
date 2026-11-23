@@ -14,6 +14,7 @@ import {
 import {
   getStoredInventory,
   addSkinToInventory,
+  type InventoryItem,
 } from "@/lib/inventory-storage";
 
 type SpinMode = "fast" | "normal" | "long" | "suspense";
@@ -53,7 +54,7 @@ const SPIN_CONFIGS: Record<
 };
 
 export function InteractiveUpgrader() {
-  const [userInventory, setUserInventory] = useState<Skin[]>(inventorySkins);
+  const [userInventory, setUserInventory] = useState<InventoryItem[]>([]);
   const [sourceSkin, setSourceSkin] = useState<Skin>(inventorySkins[0] || skins[0]);
   const [targetSkin, setTargetSkin] = useState<Skin>(skins[1] || skins[2]);
   const [spinMode, setSpinMode] = useState<SpinMode>("normal");
@@ -73,7 +74,7 @@ export function InteractiveUpgrader() {
       setSourceSkin(loaded[0]);
     }
 
-    const handleInvUpdate = (e: CustomEvent<Skin[]>) => {
+    const handleInvUpdate = (e: CustomEvent<InventoryItem[]>) => {
       if (e.detail && Array.isArray(e.detail)) {
         setUserInventory(e.detail);
       }
@@ -114,22 +115,17 @@ export function InteractiveUpgrader() {
     setOutcome(null);
     setShowResultModal(false);
 
-    // 1. Чесна генерація результату
     const isWin = Math.random() * 100 <= chance;
 
-    // 2. Ідеальний розрахунок кута без розсинхрону:
     let targetSectorAngle: number;
     if (isWin) {
-      // Суворо всередині зеленого сектора з безпечним відступом від країв
       const safeMax = Math.max(5, winAngle - 4);
       targetSectorAngle = 3 + Math.random() * (safeMax - 3);
     } else {
-      // Суворо в темній зоні поразки (відступ 6° від межі сектора)
       const darkSpan = 360 - winAngle - 10;
       targetSectorAngle = winAngle + 6 + Math.random() * Math.max(1, darkSpan);
     }
 
-    // 3. Нормалізація до повного кола, щоб виключити накопичення залишку кута
     const currentBaseCycle = Math.floor(rotation / 360);
 
     if (spinMode === "suspense") {
@@ -224,14 +220,13 @@ export function InteractiveUpgrader() {
           </h2>
         </div>
 
-        {/* 4 Режими прокруту */}
         <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-black/40 p-1">
           {(Object.keys(SPIN_CONFIGS) as SpinMode[]).map((mode) => {
             const cfg = SPIN_CONFIGS[mode];
             const isActive = spinMode === mode;
             return (
               <button
-                key={mode}
+                key={`mode-btn-${mode}`}
                 onClick={() => {
                   if (!isSpinning) {
                     playClickSound();
@@ -263,7 +258,7 @@ export function InteractiveUpgrader() {
 
       {/* 3-Колонкова арена */}
       <div className="mt-8 grid grid-cols-1 items-center gap-6 lg:grid-cols-[1fr_auto_1fr]">
-        {/* ЛІВА КОЛОНКА (Твій скін) */}
+        {/* ЛІВА КОЛОНКА */}
         <div className="w-full max-w-[340px] justify-self-center lg:justify-self-end flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
             <div className="flex items-center justify-between">
@@ -288,9 +283,9 @@ export function InteractiveUpgrader() {
               Обрати з інвентаря:
             </span>
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              {userInventory.map((s, idx) => (
+              {userInventory.map((s) => (
                 <button
-                  key={`user-inv-${s.finish}-${idx}`}
+                  key={`user-inv-item-${s.instanceId}`}
                   onClick={() => {
                     playClickSound();
                     setSourceSkin(s);
@@ -308,7 +303,7 @@ export function InteractiveUpgrader() {
           </div>
         </div>
 
-        {/* ЦЕНТРАЛЬНА КОЛОНКА: КОЛЕСО СУВОРО ПО ЦЕНТРУ */}
+        {/* ЦЕНТРАЛЬНА КОЛОНКА */}
         <div className="flex flex-col items-center justify-center justify-self-center px-2">
           <div className="relative flex size-80 items-center justify-center sm:size-92">
             <svg className="size-full -rotate-90 transform" viewBox="0 0 100 100">
@@ -339,7 +334,7 @@ export function InteractiveUpgrader() {
               </defs>
             </svg>
 
-            {/* СПРАВЖНЯ ЛАЗЕРНА СТРІЛКА-ШЕВРОН */}
+            {/* ЛАЗЕРНИЙ ШЕВРОН */}
             <div
               className="absolute inset-0 flex items-center justify-center pointer-events-none"
               style={{
@@ -369,9 +364,9 @@ export function InteractiveUpgrader() {
           </div>
 
           <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-            {[1.5, 2.0, 3.0, 5.0, 10.0, 15.0].map((m) => (
+            {[1.5, 2.0, 3.0, 5.0, 10.0, 15.0].map((m, idx) => (
               <button
-                key={m}
+                key={`multiplier-btn-${m}-${idx}`}
                 onClick={() => handleMultiplierSelect(m)}
                 className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-bold text-slate-300 transition hover:border-amber-400 hover:text-white hover:bg-amber-400/10"
               >
@@ -381,7 +376,7 @@ export function InteractiveUpgrader() {
           </div>
         </div>
 
-        {/* ПРАВА КОЛОНКА (Цільовий скін) */}
+        {/* ПРАВА КОЛОНКА */}
         <div className="w-full max-w-[340px] justify-self-center lg:justify-self-start flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
             <div className="flex items-center justify-between">
@@ -408,7 +403,7 @@ export function InteractiveUpgrader() {
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
               {skins.slice(1, 8).map((s, idx) => (
                 <button
-                  key={`target-skin-${s.finish}-${idx}`}
+                  key={`target-skin-choice-${s.finish}-${idx}`}
                   onClick={() => {
                     playClickSound();
                     setTargetSkin(s);

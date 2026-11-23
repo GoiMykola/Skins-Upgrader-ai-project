@@ -1,33 +1,53 @@
 import { skins, inventorySkins, type Skin } from "@/app/data";
 
-const INVENTORY_STORAGE_KEY = "goicoins_player_inventory";
-const BALANCE_STORAGE_KEY = "goicoins_player_balance";
+export type InventoryItem = Skin & { instanceId: string };
 
-export function getStoredInventory(): Skin[] {
-  if (typeof window === "undefined") return inventorySkins;
+const INVENTORY_STORAGE_KEY = "goicoins_inventory_v3";
+const BALANCE_STORAGE_KEY = "goicoins_balance_v3";
+
+export function getStoredInventory(): InventoryItem[] {
+  if (typeof window === "undefined") {
+    return inventorySkins.map((s, idx) => ({ ...s, instanceId: `default-${s.finish}-${idx}` }));
+  }
   try {
     const raw = localStorage.getItem(INVENTORY_STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(inventorySkins));
-      return inventorySkins;
+      const initial = inventorySkins.map((s, idx) => ({
+        ...s,
+        instanceId: `default-${s.finish}-${idx}`,
+      }));
+      localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(initial));
+      return initial;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : inventorySkins;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.map((item: Skin & { instanceId?: string }, idx: number) => ({
+        ...item,
+        instanceId:
+          item.instanceId ||
+          `item-${item.finish}-${idx}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      }));
+    }
+    return inventorySkins.map((s, idx) => ({ ...s, instanceId: `default-${s.finish}-${idx}` }));
   } catch {
-    return inventorySkins;
+    return inventorySkins.map((s, idx) => ({ ...s, instanceId: `default-${s.finish}-${idx}` }));
   }
 }
 
-export function addSkinToInventory(newSkin: Skin): Skin[] {
-  if (typeof window === "undefined") return inventorySkins;
+export function addSkinToInventory(newSkin: Skin): InventoryItem[] {
+  if (typeof window === "undefined") return [];
   try {
     const current = getStoredInventory();
-    const updated = [newSkin, ...current];
+    const newItem: InventoryItem = {
+      ...newSkin,
+      instanceId: `won-${newSkin.finish}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    };
+    const updated = [newItem, ...current];
     localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent("goi-inventory-updated", { detail: updated }));
     return updated;
   } catch {
-    return inventorySkins;
+    return [];
   }
 }
 
