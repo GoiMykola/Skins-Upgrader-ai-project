@@ -4,8 +4,8 @@ import { formatCoins } from "@/app/data";
 const MARKET_PREVIEW_ITEMS = [
   {
     name: "AK-47 | Neon Rider",
-    priceUah: 1250,
-    priceGc: 1250,
+    priceUah: 4200,
+    priceGc: 4200,
     discount: "-18%",
     wear: "Factory New",
     rarity: "Covert",
@@ -14,8 +14,8 @@ const MARKET_PREVIEW_ITEMS = [
   },
   {
     name: "AWP | Hyper Beast",
-    priceUah: 3480,
-    priceGc: 3480,
+    priceUah: 2800,
+    priceGc: 2800,
     discount: "-15%",
     wear: "Field-Tested",
     rarity: "Covert",
@@ -24,8 +24,8 @@ const MARKET_PREVIEW_ITEMS = [
   },
   {
     name: "M4A4 | Howl",
-    priceUah: 8900,
-    priceGc: 8900,
+    priceUah: 185000,
+    priceGc: 185000,
     discount: "-10%",
     wear: "Minimal Wear",
     rarity: "Contraband",
@@ -34,8 +34,8 @@ const MARKET_PREVIEW_ITEMS = [
   },
   {
     name: "★ Butterfly Knife | Gamma Doppler",
-    priceUah: 14500,
-    priceGc: 14500,
+    priceUah: 420000,
+    priceGc: 420000,
     discount: "-22%",
     wear: "Factory New",
     rarity: "Extraordinary",

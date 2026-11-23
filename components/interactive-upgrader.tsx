@@ -87,8 +87,8 @@ export function InteractiveUpgrader() {
   const rawChance = (sourceSkin.price / targetSkin.price) * 100 * 0.95;
   const chance = Math.min(95, Math.max(1, Math.round(rawChance * 10) / 10));
   const multiplier = Math.round((targetSkin.price / sourceSkin.price) * 100) / 100;
+  
   const winAngle = (chance / 100) * 360;
-
   const circleCircumference = 270.2;
   const winStrokeDash = (winAngle / 360) * circleCircumference;
   const currentConfig = SPIN_CONFIGS[spinMode];
@@ -114,19 +114,28 @@ export function InteractiveUpgrader() {
     setOutcome(null);
     setShowResultModal(false);
 
+    // 1. Чесна генерація результату
     const isWin = Math.random() * 100 <= chance;
+
+    // 2. Ідеальний розрахунок кута без розсинхрону:
     let targetSectorAngle: number;
     if (isWin) {
-      targetSectorAngle = Math.random() * (winAngle - 8) + 4;
+      // Суворо всередині зеленого сектора з безпечним відступом від країв
+      const safeMax = Math.max(5, winAngle - 4);
+      targetSectorAngle = 3 + Math.random() * (safeMax - 3);
     } else {
-      targetSectorAngle = winAngle + Math.random() * (360 - winAngle - 8) + 4;
+      // Суворо в темній зоні поразки (відступ 6° від межі сектора)
+      const darkSpan = 360 - winAngle - 10;
+      targetSectorAngle = winAngle + 6 + Math.random() * Math.max(1, darkSpan);
     }
+
+    // 3. Нормалізація до повного кола, щоб виключити накопичення залишку кута
+    const currentBaseCycle = Math.floor(rotation / 360);
 
     if (spinMode === "suspense") {
       const crawlDegrees = 110;
-      const totalDegrees = 360 * 7 + targetSectorAngle;
-      const intermediateDegree = rotation + totalDegrees - crawlDegrees;
-      const finalDegree = rotation + totalDegrees;
+      const finalDegree = (currentBaseCycle + 7) * 360 + targetSectorAngle;
+      const intermediateDegree = finalDegree - crawlDegrees;
 
       setSpinTransition("transform 2400ms cubic-bezier(0.12, 0.85, 0.25, 1)");
       requestAnimationFrame(() => {
@@ -159,8 +168,8 @@ export function InteractiveUpgrader() {
       }, 2400);
 
     } else {
-      const totalSpins = 360 * currentConfig.spins;
-      const finalDegree = rotation + totalSpins + targetSectorAngle;
+      const totalSpins = currentConfig.spins;
+      const finalDegree = (currentBaseCycle + totalSpins) * 360 + targetSectorAngle;
       const duration = currentConfig.duration;
       const easing =
         spinMode === "fast"
@@ -206,6 +215,7 @@ export function InteractiveUpgrader() {
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0d1018]/95 p-6 shadow-2xl shadow-black/80 backdrop-blur-xl sm:p-8">
+      {/* Верхній статус бар */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.06] pb-4">
         <div className="flex items-center gap-2.5">
           <span className="size-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_#f59e0b]" />
@@ -214,6 +224,7 @@ export function InteractiveUpgrader() {
           </h2>
         </div>
 
+        {/* 4 Режими прокруту */}
         <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-black/40 p-1">
           {(Object.keys(SPIN_CONFIGS) as SpinMode[]).map((mode) => {
             const cfg = SPIN_CONFIGS[mode];
@@ -250,9 +261,9 @@ export function InteractiveUpgrader() {
         </button>
       </div>
 
-      {/* 3-КОЛОНКОВА АРЕНА (ІДЕАЛЬНО ВИРІВНЯНА ПО ЦЕНТРУ) */}
+      {/* 3-Колонкова арена */}
       <div className="mt-8 grid grid-cols-1 items-center gap-6 lg:grid-cols-[1fr_auto_1fr]">
-        {/* ЛІВА КОЛОНКА */}
+        {/* ЛІВА КОЛОНКА (Твій скін) */}
         <div className="w-full max-w-[340px] justify-self-center lg:justify-self-end flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
             <div className="flex items-center justify-between">
@@ -277,9 +288,9 @@ export function InteractiveUpgrader() {
               Обрати з інвентаря:
             </span>
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              {userInventory.map((s) => (
+              {userInventory.map((s, idx) => (
                 <button
-                  key={s.finish}
+                  key={`user-inv-${s.finish}-${idx}`}
                   onClick={() => {
                     playClickSound();
                     setSourceSkin(s);
@@ -297,7 +308,7 @@ export function InteractiveUpgrader() {
           </div>
         </div>
 
-        {/* ЦЕНТРАЛЬНА КОЛОНКА: РІВНО ПО ЦЕНТРУ */}
+        {/* ЦЕНТРАЛЬНА КОЛОНКА: КОЛЕСО СУВОРО ПО ЦЕНТРУ */}
         <div className="flex flex-col items-center justify-center justify-self-center px-2">
           <div className="relative flex size-80 items-center justify-center sm:size-92">
             <svg className="size-full -rotate-90 transform" viewBox="0 0 100 100">
@@ -317,7 +328,7 @@ export function InteractiveUpgrader() {
                 stroke="url(#winGradient)"
                 strokeWidth="6"
                 strokeDasharray={`${winStrokeDash} ${circleCircumference}`}
-                strokeLinecap="round"
+                strokeLinecap="butt"
                 className="transition-all duration-300"
               />
               <defs>
@@ -328,7 +339,7 @@ export function InteractiveUpgrader() {
               </defs>
             </svg>
 
-            {/* СПРАВЖНЯ ЛАЗЕРНА СТРІЛКА-ШЕВРОН (ЗАМІСТЬ РОМБА) */}
+            {/* СПРАВЖНЯ ЛАЗЕРНА СТРІЛКА-ШЕВРОН */}
             <div
               className="absolute inset-0 flex items-center justify-center pointer-events-none"
               style={{
@@ -370,7 +381,7 @@ export function InteractiveUpgrader() {
           </div>
         </div>
 
-        {/* ПРАВА КОЛОНКА */}
+        {/* ПРАВА КОЛОНКА (Цільовий скін) */}
         <div className="w-full max-w-[340px] justify-self-center lg:justify-self-start flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
             <div className="flex items-center justify-between">
@@ -395,9 +406,9 @@ export function InteractiveUpgrader() {
               Обрати бажану ціль:
             </span>
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              {skins.slice(1, 8).map((s) => (
+              {skins.slice(1, 8).map((s, idx) => (
                 <button
-                  key={s.finish}
+                  key={`target-skin-${s.finish}-${idx}`}
                   onClick={() => {
                     playClickSound();
                     setTargetSkin(s);
