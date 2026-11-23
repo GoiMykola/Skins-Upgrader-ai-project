@@ -1,65 +1,91 @@
 "use client";
 
+import { useState } from "react";
 import { ActionForm } from "@/components/action-form";
 import { createAiSkinAction } from "@/app/catalog/ai-actions";
+import { playClickSound } from "@/lib/sound-fx";
+
+const PRESET_IDEAS = [
+  "⚡ Неоновий кібер-дракон AWP у синіх тонах",
+  "🔥 Вулкан у лаві AK-47 із золотим сяйвом",
+  "🌌 Галактичний фантом M4A4 з туманністю",
+  "🧊 Крижаний клинок Керамбіт прямо із заводу",
+  "👑 Імператорський Desert Eagle з гравіюванням",
+];
 
 export function AiSkinWorkshop({ isConfigured = true }: { isConfigured?: boolean }) {
+  const [promptText, setPromptText] = useState("");
+
   if (!isConfigured) {
     return (
-      <div className="mb-8 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-6 text-zinc-300 backdrop-blur-md">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-400">
-            AI WORKSHOP ENGINE
-          </span>
-          <span className="text-xs text-amber-400/80">• Тимчасово вимкнено</span>
-        </div>
-        <h2 className="text-xl font-bold text-white mb-1">ШІ-Майстерня створення скінів</h2>
-        <p className="text-sm text-zinc-400">
-          Функція створення скінів на базі ШІ тимчасово недоступна: ключ моделі не налаштовано або вимкнено адміністратором. Решта функцій каталогу працює стабільно.
+      <div className="mb-8 rounded-3xl border border-amber-500/30 bg-amber-950/20 p-6 text-zinc-300 backdrop-blur-md">
+        <h3 className="text-lg font-bold text-white">ШІ-Майстерня тимчасово недоступна</h3>
+        <p className="mt-1 text-sm text-zinc-400">
+          Ключ API або модель не налаштовані на сервері. Каталог працює в штатному режимі.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="mb-8 rounded-2xl border border-amber-500/20 bg-zinc-950/80 p-6 backdrop-blur-md shadow-lg shadow-amber-950/10">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-400">
-          AI WORKSHOP ENGINE
-        </span>
+    <div className="relative mb-10 overflow-hidden rounded-3xl border border-amber-500/30 bg-[#0e111a]/95 p-6 shadow-2xl shadow-amber-500/5 backdrop-blur-xl sm:p-8">
+      <div className="flex items-center gap-3 border-b border-white/[0.06] pb-4">
+        <span className="size-3 rounded-full bg-amber-400 shadow-[0_0_10px_#f59e0b]" />
+        <div>
+          <span className="rounded-md bg-amber-400/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-300">
+            AI WORKSHOP v1.0
+          </span>
+          <h2 className="mt-1 text-xl font-black text-white">ШІ-Майстерня створення скінів</h2>
+        </div>
       </div>
-      <h2 className="text-xl font-bold text-white mb-1">ШІ-Майстерня створення скінів</h2>
-      <p className="text-sm text-zinc-400 mb-4">
-        Опиши концепт, візуал чи тематику скіна — штучний інтелект згенерує характеристики та запише його в каталог!
+
+      <p className="mt-4 text-sm text-slate-300">
+        Опиши концепт скіна — штучний інтелект згенерує характеристики та запише його в каталог!
       </p>
 
-      <ActionForm action={createAiSkinAction} className="space-y-4">
-        <div>
-          <label htmlFor="prompt" className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5">
-            Опис або ідея скіна
-          </label>
-          <input
-            id="prompt"
-            name="prompt"
-            type="text"
-            placeholder="Наприклад: Кібернетичний дракон у неонових синіх тонах для AWP"
-            maxLength={300}
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-900/90 px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          />
+      <div className="mt-4">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+          Швидкі ідеї:
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {PRESET_IDEAS.map((idea) => (
+            <button
+              key={idea}
+              type="button"
+              onClick={() => {
+                playClickSound();
+                setPromptText(idea);
+              }}
+              className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-300 transition hover:border-amber-400/50 hover:bg-amber-400/10 hover:text-white"
+            >
+              {idea}
+            </button>
+          ))}
         </div>
+      </div>
 
-        <div className="flex items-center justify-between pt-1">
-          <span className="text-xs text-zinc-500">
-            Генерація на базі моделі Gemini Flash
-          </span>
-          <button
-            type="submit"
-            className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-2 text-sm font-semibold text-zinc-950 shadow-md hover:from-amber-400 hover:to-amber-500 transition-all active:scale-[0.98]"
-          >
-            Згенерувати скін (ШІ)
-          </button>
-        </div>
-      </ActionForm>
+      <div className="mt-6">
+        <ActionForm action={createAiSkinAction} successMessage="Скін згенеровано та додано!">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              name="prompt"
+              type="text"
+              required
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+              placeholder="Наприклад: Кібернетичний фантом у неонових тонах для AWP"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3.5 text-sm text-white placeholder-slate-500 focus:border-amber-400 focus:outline-none"
+            />
+            <button
+              type="submit"
+              onClick={() => playClickSound()}
+              className="shrink-0 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3.5 text-sm font-black text-[#1a1104] shadow-lg shadow-orange-500/20 transition hover:brightness-110 active:scale-[0.99]"
+            >
+              Згенерувати скін ⚡
+            </button>
+          </div>
+        </ActionForm>
+      </div>
     </div>
   );
 }
