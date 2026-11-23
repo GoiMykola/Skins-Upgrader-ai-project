@@ -10,6 +10,7 @@ import {
   playWinSound,
   playLossSound,
   toggleMute,
+  isMuted,
 } from "@/lib/sound-fx";
 import {
   getStoredInventory,
@@ -19,74 +20,104 @@ import {
 
 type SpinMode = "fast" | "normal" | "long" | "suspense";
 
-const SPIN_CONFIGS: Record<
-  SpinMode,
-  { label: string; icon: string; duration: number; spins: number; description: string }
-> = {
+interface SpinConfig {
+  label: string;
+  spins: number;
+  duration: number;
+  description: string;
+  icon: string;
+}
+
+const SPIN_CONFIGS: Record<SpinMode, SpinConfig> = {
   fast: {
     label: "Швидка",
-    icon: "⚡",
-    duration: 1600,
     spins: 3,
-    description: "Миттєвий швидкий результат (1.6 с)",
+    duration: 1600,
+    description: "Миттєвий розіграш за 1.6с для тих, хто не любить чекати",
+    icon: "⚡",
   },
   normal: {
     label: "Звичайна",
-    icon: "🎯",
-    duration: 3800,
     spins: 6,
-    description: "Класичний збалансований прокрут (3.8 с)",
+    duration: 3800,
+    description: "Збалансоване обертання рулетки з плавним гальмуванням",
+    icon: "🎯",
   },
   long: {
     label: "Довга",
-    icon: "⏳",
-    duration: 6500,
     spins: 10,
-    description: "Максимальна інтрига та напруга (6.5 с)",
+    duration: 6500,
+    description: "Максимальна напруга: 10 обертів з протяжним сповільненням",
+    icon: "⏳",
   },
   suspense: {
     label: "Азартна",
-    icon: "🔥",
-    duration: 5600,
     spins: 7,
-    description: "Швидкий розгін + 3 секунди повільного повзунка напруги",
+    duration: 5400,
+    description: "Динамічний розгін + 3 секунди повільного повзунка через межу перемоги!",
+    icon: "🔥",
   },
 };
 
 export function InteractiveUpgrader() {
   const [userInventory, setUserInventory] = useState<InventoryItem[]>([]);
-  const [sourceSkin, setSourceSkin] = useState<Skin>(inventorySkins[0] || skins[0]);
-  const [targetSkin, setTargetSkin] = useState<Skin>(skins[1] || skins[2]);
-  const [spinMode, setSpinMode] = useState<SpinMode>("normal");
+  const [sourceSkin, setSourceSkin] = useState<Skin>(skins[0]);
+  const [targetSkin, setTargetSkin] = useState<Skin>(skins[1]);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [spinMode, setSpinMode] = useState<SpinMode>("normal");
   const [rotation, setRotation] = useState(0);
   const [spinTransition, setSpinTransition] = useState<string>("none");
   const [outcome, setOutcome] = useState<"win" | "loss" | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
   const [muted, setMuted] = useState(false);
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const crawlIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const loaded = getStoredInventory();
-    setUserInventory(loaded);
-    if (loaded.length > 0 && loaded[0]) {
-      setSourceSkin(loaded[0]);
-    }
+    const inv = getStoredInventory();
+    setUserInventory(inv);
+    if (inv.length > 0) setSourceSkin(inv[0]);
+    setMuted(isMuted());
+
+    // Перевіряємо вибір джерела з інвентаря
+    try {
+      const selectedSourceRaw = localStorage.getItem("goicoins_selected_source");
+      if (selectedSourceRaw) {
+        const parsed = JSON.parse(selectedSourceRaw);
+        if (parsed && parsed.name && parsed.price) {
+          setSourceSkin(parsed);
+          localStorage.removeItem("goicoins_selected_source");
+        }
+      }
+    } catch {}
+
+    // Перевіряємо вибір цілі з Ринку
+    try {
+      const selectedTargetRaw = localStorage.getItem("goicoins_selected_target");
+      if (selectedTargetRaw) {
+        const parsed = JSON.parse(selectedTargetRaw);
+        if (parsed && parsed.name && parsed.price) {
+          setTargetSkin(parsed);
+          localStorage.removeItem("goicoins_selected_target");
+        }
+      }
+    } catch {}
 
     const handleInvUpdate = (e: CustomEvent<InventoryItem[]>) => {
-      if (e.detail && Array.isArray(e.detail)) {
-        setUserInventory(e.detail);
-      }
+      if (e.detail) setUserInventory(e.detail);
     };
     window.addEventListener("goi-inventory-updated", handleInvUpdate as EventListener);
+
     return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (crawlIntervalRef.current) clearInterval(crawlIntervalRef.current);
       window.removeEventListener("goi-inventory-updated", handleInvUpdate as EventListener);
     };
   }, []);
 
   const rawChance = (sourceSkin.price / targetSkin.price) * 100 * 0.95;
-  const chance = Math.min(95, Math.max(1, Math.round(rawChance * 10) / 10));
+  const chance = Math.min(95, Math.max(0.5, Math.round(rawChance * 10) / 10));
   const multiplier = Math.round((targetSkin.price / sourceSkin.price) * 100) / 100;
   
   const winAngle = (chance / 100) * 360;
@@ -258,7 +289,7 @@ export function InteractiveUpgrader() {
 
       {/* 3-Колонкова арена */}
       <div className="mt-8 grid grid-cols-1 items-center gap-6 lg:grid-cols-[1fr_auto_1fr]">
-        {/* ЛІВА КОЛОНКА */}
+        {/* ЛІВА КОЛОНКА (Твій скін) */}
         <div className="w-full max-w-[340px] justify-self-center lg:justify-self-end flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
             <div className="flex items-center justify-between">
@@ -303,7 +334,7 @@ export function InteractiveUpgrader() {
           </div>
         </div>
 
-        {/* ЦЕНТРАЛЬНА КОЛОНКА */}
+        {/* ЦЕНТРАЛЬНА КОЛОНКА: ЗБІЛЬШЕНЕ КОЛЕСО СУВОРО ПО ЦЕНТРУ */}
         <div className="flex flex-col items-center justify-center justify-self-center px-2">
           <div className="relative flex size-80 items-center justify-center sm:size-92">
             <svg className="size-full -rotate-90 transform" viewBox="0 0 100 100">
@@ -311,64 +342,62 @@ export function InteractiveUpgrader() {
                 cx="50"
                 cy="50"
                 r="43"
-                fill="transparent"
-                stroke="#151924"
+                className="stroke-[#131826]"
                 strokeWidth="6"
+                fill="transparent"
               />
               <circle
                 cx="50"
                 cy="50"
                 r="43"
-                fill="transparent"
-                stroke="url(#winGradient)"
+                className="stroke-emerald-400 transition-all duration-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.55)]"
                 strokeWidth="6"
                 strokeDasharray={`${winStrokeDash} ${circleCircumference}`}
                 strokeLinecap="butt"
-                className="transition-all duration-300"
+                fill="transparent"
               />
-              <defs>
-                <linearGradient id="winGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#10b981" />
-                  <stop offset="100%" stopColor="#34d399" />
-                </linearGradient>
-              </defs>
             </svg>
 
-            {/* ЛАЗЕРНИЙ ШЕВРОН */}
+            {/* Стрілка: Золотий лазерний шеврон, що вказує прямо в доріжку */}
             <div
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center will-change-transform"
               style={{
                 transform: `rotate(${rotation}deg)`,
-                transition: isSpinning ? spinTransition : "none",
+                transition: spinTransition,
               }}
             >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <div className="size-0 border-x-[7px] border-x-transparent border-t-[12px] border-t-amber-400 drop-shadow-[0_0_12px_#f59e0b]" />
-                <div className="size-1.5 rounded-full bg-white shadow-[0_0_8px_#ffffff] -mt-1" />
-                <div className="h-14 w-0.5 bg-gradient-to-b from-amber-400 via-amber-400/40 to-transparent shadow-[0_0_8px_#f59e0b]" />
+              <div className="absolute top-2.5 flex flex-col items-center">
+                <div className="h-4 w-1 bg-gradient-to-t from-amber-400 to-transparent shadow-[0_0_8px_#f59e0b]" />
+                <div className="size-0 border-x-[7px] border-t-[12px] border-x-transparent border-t-amber-400 drop-shadow-[0_0_10px_#f59e0b]" />
+                <div className="size-1.5 -mt-1 rounded-full bg-white shadow-[0_0_6px_#fff]" />
               </div>
             </div>
 
-            <div className="absolute flex size-44 sm:size-48 flex-col items-center justify-center rounded-full border border-white/10 bg-[#0a0d14] shadow-inner text-center">
+            {/* Центр рулетки з показниками */}
+            <div className="absolute flex flex-col items-center justify-center text-center">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Шанс апгрейду
+                ШАНС АПГРЕЙДУ
               </span>
-              <span className="text-3xl sm:text-4xl font-black text-white">{chance}%</span>
-              <span className="mt-1 rounded-full bg-violet-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-violet-300 border border-violet-500/30">
+              <span className="font-mono text-3xl font-black text-white sm:text-4xl">
+                {chance}%
+              </span>
+              <span className="mt-1 rounded-full bg-white/5 px-2.5 py-0.5 font-mono text-xs font-bold text-amber-300 border border-white/5">
                 ×{multiplier}
               </span>
-              <span className="mt-1 text-[10px] text-slate-500 font-semibold">
+              <span className="mt-1 text-[10px] text-slate-500 font-medium">
                 Режим: {currentConfig.label}
               </span>
             </div>
           </div>
 
-          <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-            {[1.5, 2.0, 3.0, 5.0, 10.0, 15.0].map((m, idx) => (
+          {/* Швидкі множники */}
+          <div className="mt-2 flex items-center gap-1.5 rounded-xl border border-white/[0.06] bg-black/40 p-1.5">
+            {[1.5, 2, 3, 5, 10, 15].map((m) => (
               <button
-                key={`multiplier-btn-${m}-${idx}`}
+                key={`mult-btn-${m}`}
                 onClick={() => handleMultiplierSelect(m)}
-                className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-bold text-slate-300 transition hover:border-amber-400 hover:text-white hover:bg-amber-400/10"
+                disabled={isSpinning}
+                className="rounded-lg px-2.5 py-1 font-mono text-xs font-bold text-slate-400 transition hover:bg-white/10 hover:text-amber-300 disabled:opacity-40"
               >
                 {m}×
               </button>
@@ -376,11 +405,11 @@ export function InteractiveUpgrader() {
           </div>
         </div>
 
-        {/* ПРАВА КОЛОНКА */}
+        {/* ПРАВА КОЛОНКА (Ціль) */}
         <div className="w-full max-w-[340px] justify-self-center lg:justify-self-start flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Бажаний скін (ціль)
               </span>
               <span className="font-mono text-xs font-bold text-amber-300">
@@ -397,13 +426,21 @@ export function InteractiveUpgrader() {
           </div>
 
           <div className="mt-4 border-t border-white/[0.06] pt-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1.5">
-              Обрати бажану ціль:
-            </span>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Обрати бажану ціль:
+              </span>
+              <a
+                href="/market"
+                className="text-[10px] font-bold text-amber-400 hover:text-amber-300 underline"
+              >
+                Всі з Ринку →
+              </a>
+            </div>
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              {skins.slice(1, 8).map((s, idx) => (
+              {skins.map((s, idx) => (
                 <button
-                  key={`target-skin-choice-${s.finish}-${idx}`}
+                  key={`target-select-btn-${s.finish}-${idx}`}
                   onClick={() => {
                     playClickSound();
                     setTargetSkin(s);
@@ -422,6 +459,7 @@ export function InteractiveUpgrader() {
         </div>
       </div>
 
+      {/* Кнопка запуску апгрейду */}
       <div className="mt-8 flex justify-center">
         <button
           onClick={handleUpgrade}
@@ -436,6 +474,7 @@ export function InteractiveUpgrader() {
         </button>
       </div>
 
+      {/* Модальне вікно результату */}
       {showResultModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0e111a] p-6 text-center shadow-2xl">

@@ -1,5 +1,5 @@
 let audioCtx: AudioContext | null = null;
-let isMuted = false;
+let isMutedState = false;
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -15,13 +15,17 @@ function getAudioContext(): AudioContext | null {
   return audioCtx;
 }
 
+export function isMuted(): boolean {
+  return isMutedState;
+}
+
 export function toggleMute(): boolean {
-  isMuted = !isMuted;
-  return isMuted;
+  isMutedState = !isMutedState;
+  return isMutedState;
 }
 
 export function playClickSound() {
-  if (isMuted) return;
+  if (isMutedState) return;
   const ctx = getAudioContext();
   if (!ctx) return;
   try {
@@ -40,7 +44,7 @@ export function playClickSound() {
 }
 
 export function playTickSound(pitch = 700) {
-  if (isMuted) return;
+  if (isMutedState) return;
   const ctx = getAudioContext();
   if (!ctx) return;
   try {
@@ -72,7 +76,7 @@ export function playTickSound(pitch = 700) {
 }
 
 export function playWinSound() {
-  if (isMuted) return;
+  if (isMutedState) return;
   const ctx = getAudioContext();
   if (!ctx) return;
   try {
@@ -94,39 +98,23 @@ export function playWinSound() {
 }
 
 export function playLossSound() {
-  if (isMuted) return;
+  if (isMutedState) return;
   const ctx = getAudioContext();
   if (!ctx) return;
   try {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(260, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.32);
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.005, ctx.currentTime + 0.32);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.32);
-  } catch {}
-}
-
-export function playCoinSound() {
-  if (isMuted) return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
-  try {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(1046.5, ctx.currentTime);
-    osc.frequency.setValueAtTime(1567.98, ctx.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.25, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.005, ctx.currentTime + 0.28);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.28);
+    const notes = [440, 370, 311, 220];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sawtooth";
+      const start = ctx.currentTime + i * 0.09;
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.12, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.22);
+    });
   } catch {}
 }

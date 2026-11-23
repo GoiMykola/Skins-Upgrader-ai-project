@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { Skin } from "../data";
 import { formatCoins } from "../data";
@@ -12,13 +14,21 @@ export default function SkinTile({
   action: string;
   href?: string;
 }) {
+  const accent = skin.accent || "#eb4b4b";
+
+  const handleSelectAsSource = () => {
+    try {
+      localStorage.setItem("goicoins_selected_source", JSON.stringify(skin));
+    } catch {}
+  };
+
   return (
     <article className="group relative rounded-2xl border border-white/[0.08] bg-[#0e111a] p-3.5 transition duration-200 hover:-translate-y-1 hover:border-white/20 hover:shadow-xl hover:shadow-black/50">
       <div
         className="absolute inset-0 rounded-2xl opacity-0 transition duration-300 group-hover:opacity-100 pointer-events-none"
         style={{
-          boxShadow: `0 0 24px ${skin.accent}25`,
-          border: `1px solid ${skin.accent}40`,
+          boxShadow: `0 0 24px ${accent}25`,
+          border: `1px solid ${accent}40`,
         }}
       />
       <SkinArt skin={skin} />
@@ -33,9 +43,9 @@ export default function SkinTile({
           <span
             className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide shrink-0"
             style={{
-              backgroundColor: `${skin.accent}15`,
-              color: skin.accent,
-              border: `1px solid ${skin.accent}30`,
+              backgroundColor: `${accent}15`,
+              color: accent,
+              border: `1px solid ${accent}30`,
             }}
           >
             {skin.rarity}
@@ -48,7 +58,8 @@ export default function SkinTile({
           </span>
           <Link
             href={href}
-            className="rounded-xl bg-white/[0.06] px-3.5 py-1.5 text-xs font-bold text-slate-200 transition hover:bg-amber-400 hover:text-[#1a1104]"
+            onClick={handleSelectAsSource}
+            className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-1.5 text-xs font-black text-[#1a1005] hover:brightness-110"
           >
             {action}
           </Link>

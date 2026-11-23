@@ -10,7 +10,55 @@ export type Skin = {
   image: string;
 };
 
-// Реальні ринкові ціни CS2 у грн (Lis-Skins / Steam Market, 1 грн = 1 GC)
+export type MarketSkin = {
+  id: string;
+  name: string;
+  weapon: string;
+  fullName: string;
+  category: "knives" | "gloves" | "snipers" | "rifles" | "pistols" | "smgs" | "heavy" | "other";
+  rarity: string;
+  rarityUk: string;
+  rarityColor: string;
+  price: number;
+  image: string;
+  minFloat?: number;
+  maxFloat?: number;
+};
+
+// Розумне форматування цін (1 грн = 1 GC), щоб текст не ламав картки (420к, 185к, 8.9к)
+export function formatCoins(amount: number): string {
+  if (!amount && amount !== 0) return "0";
+  if (amount >= 1_000_000) {
+    const val = amount / 1_000_000;
+    return (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)) + "M";
+  }
+  if (amount >= 10_000) {
+    const val = amount / 1_000;
+    return (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)) + "к";
+  }
+  if (amount >= 1_000) {
+    const val = amount / 1_000;
+    return (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)) + "к";
+  }
+  return amount.toString();
+}
+
+// Конвертація предмету з Ринку в формат Скіна для Апгрейдера та Інвентаря
+export function marketSkinToSkin(item: MarketSkin): Skin {
+  return {
+    name: item.name,
+    weapon: item.weapon,
+    wear: "Прямо із заводу",
+    price: item.price,
+    rarity: item.rarityUk || item.rarity,
+    accent: item.rarityColor || "#eb4b4b",
+    finish: item.id || item.name.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+    kind: (item.category === "knives" ? "knife" : item.category === "snipers" ? "sniper" : item.category === "pistols" ? "pistol" : "rifle") as any,
+    image: item.image,
+  };
+}
+
+// Стартові скіни (реальні ринкові ціни Lis-Skins у грн)
 export const skins: Skin[] = [
   {
     name: "Neon Rider",
@@ -44,6 +92,17 @@ export const skins: Skin[] = [
     finish: "howl",
     kind: "rifle",
     image: "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL8ypexwiFO0P_6afVSKP-EAm6extF6ueZhW2exwkl2tmTXwt39eCiUPQR2DMN4TOVetUK8xoLgM-K341eM2otDnC6okGoXufBz_TAB",
+  },
+  {
+    name: "Dragon Lore",
+    weapon: "AWP",
+    wear: "Прямо із заводу",
+    price: 450000,
+    rarity: "Таємне",
+    accent: "#eb4b4b",
+    finish: "dragon-lore",
+    kind: "sniper",
+    image: "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLwiYbf_jdk4veqYaF7IfysCnWRxuF4j-B-Xxa_nBovp3Pdwtj9cC_GaAd0DZdwQu9fuhS4kNy0NePntVTbjYpCyyT_3CgY5i9j_a9cBkcCWUKV",
   },
   {
     name: "Gamma Doppler (Emerald)",
@@ -109,40 +168,16 @@ export const skins: Skin[] = [
     accent: "#eb4b4b",
     finish: "kill-confirmed",
     kind: "pistol",
-    image: "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLkjYbf7itX6vytbbZSI-WsG3SA_uV_vO1WTCa9kxQ1vjiBpYPwJiPTcFB2Xpp5TO5cskG9lYCxZu_jsVCL3o4Xnij23ClO5ik9tegFA_It8qHJz1aWe-uc160",
-  },
-  {
-    name: "Asiimov",
-    weapon: "AK-47",
-    wear: "Після польових",
-    price: 1950,
-    rarity: "Таємне",
-    accent: "#eb4b4b",
-    finish: "asiimov-ak",
-    kind: "rifle",
-    image: "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLwlcK3wiFO0POlPPNSIeOaB2qf19F6ueZhW2e2wEt-t2jcytf6dymSO1JxA5oiRecLsRa5kIfkYr-241aLgotHz3-rkGoXuUp8oX57",
-  },
-  {
-    name: "Water Elemental",
-    weapon: "Glock-18",
-    wear: "Після польових",
-    price: 520,
-    rarity: "Засекречена",
-    accent: "#d32ce6",
-    finish: "water-elemental",
-    kind: "pistol",
-    image: "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL2kpnj9h1Y-s2pZKtuK72fB3aFxP11te99cCW6khUz_TjVyompc3-QOFR2DJQkFOMJtBbqk9LlY-7n5QLZjtkTxCWqhixPv311o7FVIf8eASQ",
+    image: "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL1m5fn8S1E8emXZadkM-GGCWWZ_eJ_t-loA36mxw4u5GyAzNuufC3XPlNxA5YmEbZI71W8kIznZ-y6v1Xp2t9NzS_5mStXrnE9vW0vK9c",
   },
 ];
 
-export const inventorySkins = [
+export const inventorySkins: Skin[] = [
   skins[0], // AK-47 Neon Rider (4 200 GC)
   skins[1], // AWP Hyper Beast (2 800 GC)
-  skins[7], // Desert Eagle Printstream (3 900 GC)
-  skins[8], // USP-S Kill Confirmed (3 200 GC)
-  skins[9], // AK-47 Asiimov (1 950 GC)
-  skins[10], // Glock-18 Water Elemental (520 GC)
-].filter((skin): skin is Skin => skin !== undefined);
+  skins[8], // Desert Eagle Printstream (3 900 GC)
+  skins[9], // USP-S Kill Confirmed (3 200 GC)
+];
 
 export const players = [
   { rank: "01", name: "s1mple.ua", level: "Легенда", value: 890000, skins: 34 },
@@ -151,15 +186,3 @@ export const players = [
   { rank: "04", name: "v1per", level: "Майстер", value: 145000, skins: 12 },
   { rank: "05", name: "n0va", level: "Ветеран", value: 85000, skins: 11 },
 ];
-
-export function formatCoins(value: number): string {
-  if (value >= 1000000) {
-    const m = (value / 1000000).toFixed(1).replace(".0", "");
-    return `${m}М`;
-  }
-  if (value >= 10000) {
-    const k = (value / 1000).toFixed(value % 1000 === 0 ? 0 : 1).replace(".0", "");
-    return `${k}к`;
-  }
-  return new Intl.NumberFormat("uk-UA").format(value);
-}

@@ -8,7 +8,7 @@ import { getStoredInventory, getStoredBalance, type InventoryItem } from "@/lib/
 
 export default function InventoryPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [balance, setBalance] = useState(1000);
+  const [balance, setBalance] = useState(1500);
 
   useEffect(() => {
     setInventory(getStoredInventory());
@@ -33,6 +33,7 @@ export default function InventoryPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      {/* Профіль гравця з живим балансом */}
       <div className="mb-10 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0e111a] p-6 sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -66,21 +67,30 @@ export default function InventoryPage() {
         </div>
       </div>
 
+      {/* Список предметів */}
       <div>
         <div className="mb-6 flex items-center justify-between border-b border-white/[0.08] pb-4">
           <h2 className="text-xl font-bold text-white">
             Предмети в інвентарі ({inventory.length})
           </h2>
-          <Link
-            href="/"
-            className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2 text-xs font-black text-[#1a1005] hover:brightness-110"
-          >
-            До Апгрейдера ⚡
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/market"
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-white/10"
+            >
+              Ринок скінів CS2 🛒
+            </Link>
+            <Link
+              href="/"
+              className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2 text-xs font-black text-[#1a1005] hover:brightness-110"
+            >
+              До Апгрейдера ⚡
+            </Link>
+          </div>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {inventory.map((skin) => (
-            <SkinTile key={`inventory-tile-${skin.instanceId}`} skin={skin} action="Апгрейдити" href="/" />
+            <SkinTile key={skin.instanceId} skin={skin} action="Апгрейдити" href="/" />
           ))}
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { skins, inventorySkins, type Skin } from "@/app/data";
+import { skins, inventorySkins, type Skin, type MarketSkin, marketSkinToSkin } from "@/app/data";
 
 export type InventoryItem = Skin & { instanceId: string };
 
@@ -52,17 +52,17 @@ export function addSkinToInventory(newSkin: Skin): InventoryItem[] {
 }
 
 export function getStoredBalance(): number {
-  if (typeof window === "undefined") return 1000;
+  if (typeof window === "undefined") return 1500;
   try {
     const raw = localStorage.getItem(BALANCE_STORAGE_KEY);
-    return raw ? parseInt(raw, 10) : 1000;
+    return raw ? parseInt(raw, 10) : 1500;
   } catch {
-    return 1000;
+    return 1500;
   }
 }
 
 export function updateStoredBalance(delta: number): number {
-  if (typeof window === "undefined") return 1000;
+  if (typeof window === "undefined") return 1500;
   try {
     const current = getStoredBalance();
     const updated = Math.max(0, current + delta);
@@ -70,6 +70,6 @@ export function updateStoredBalance(delta: number): number {
     window.dispatchEvent(new CustomEvent("goi-balance-updated", { detail: updated }));
     return updated;
   } catch {
-    return 1000;
+    return 1500;
   }
 }

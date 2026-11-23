@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import type { Skin } from "../data";
 
 export default function SkinArt({
@@ -7,11 +8,13 @@ export default function SkinArt({
   skin: Skin;
   className?: string;
 }) {
+  const accent = skin.accent || "#eb4b4b";
+
   return (
     <div
       className={`relative flex h-36 items-center justify-center overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0c0e15] ${className}`}
       style={{
-        backgroundImage: `radial-gradient(ellipse at 50% 60%, ${skin.accent}20, transparent 70%)`,
+        backgroundImage: `radial-gradient(ellipse at 50% 60%, ${accent}25, transparent 70%)`,
       }}
       aria-label={`${skin.weapon} | ${skin.name}`}
       role="img"
@@ -19,7 +22,7 @@ export default function SkinArt({
       <div
         className="absolute inset-0 opacity-15 pointer-events-none"
         style={{
-          background: `radial-gradient(circle at center, ${skin.accent}, transparent 70%)`,
+          background: `radial-gradient(circle at center, ${accent}, transparent 70%)`,
         }}
       />
 
