@@ -10,6 +10,7 @@ import {
   checkSkinReply,
   type ValidSkinData,
 } from "@/lib/ai/skin-crafter";
+import { countMyCallsSince, appCallsToday, recordCall } from "@/lib/data/db/ai-guard";
 
 export async function createAiSkinAction(
   previous: ActionResult | null,
@@ -33,8 +34,42 @@ export async function createAiSkinAction(
     };
   }
 
+  // Т2: Перевірка лімітів викликів і витрат (Крок 13)
+  const userLimit = Number(process.env.AI_USER_LIMIT_PER_HOUR ?? 20);
+  const appLimit = Number(process.env.AI_APP_LIMIT_PER_DAY ?? 100);
+
+  if (userLimit <= 0) {
+    return {
+      status: 429,
+      message: "Вичерпано погодинний ліміт запитів до моделі. Спробуйте пізніше.",
+    };
+  }
+
+  try {
+    const oneHourAgo = new Date(Date.now() - 3600 * 1000).toISOString();
+    const userCalls = await countMyCallsSince(oneHourAgo);
+    if (userCalls >= userLimit) {
+      return {
+        status: 429,
+        message: "Вичерпано погодинний ліміт запитів до моделі. Спробуйте пізніше.",
+      };
+    }
+
+    const appCalls = await appCallsToday();
+    if (appCalls >= appLimit) {
+      return {
+        status: 429,
+        message: "Вичерпано добовий бюджет застосунку на запити до моделі. Спробуйте завтра.",
+      };
+    }
+  } catch (err) {
+    if (userLimit <= 0) {
+      return { status: 429, message: "Ліміт вичерпано." };
+    }
+  }
+
   let validSkin: ValidSkinData | null = null;
-  const maxAttempts = 2; // одна повторна спроба згідно з методичкою
+  const maxAttempts = 2; // одна повторна спроба
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
@@ -47,6 +82,7 @@ export async function createAiSkinAction(
       const checked = checkSkinReply(reply.text);
       if (checked.ok) {
         validSkin = checked.value;
+        await recordCall(false); // фіксуємо платний виклик у базі
         break;
       }
     } catch (err: any) {
@@ -59,7 +95,6 @@ export async function createAiSkinAction(
     }
   }
 
-  // Якщо після повторної спроби модель все одно відповіла не за схемою
   if (!validSkin) {
     return {
       status: 503,
