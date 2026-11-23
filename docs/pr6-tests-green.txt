@@ -1,0 +1,23 @@
+
+> aidevcourse@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 /workspaces/Skins-Upgrader-ai-project
+
+ ✓ tests/ai-skin-crafter.test.ts (7 tests) 3219ms
+   ✓ функція на базі моделі: ШІ-Майстерня скінів > невалідний формат: кожен із дефектів Д1–Д6 дає спробу повтору, потім 503 і не створює запис  2213ms
+ ✓ tests/actions-skins.test.ts (3 tests) 1550ms
+   ✓ точки доступу: скіни каталогу > успішний виклик: гравець додає скін у каталог, і він є в базі  681ms
+   ✓ точки доступу: скіни каталогу > чужий запис: акаунт Б не бачить і не видаляє скін акаунта А  730ms
+ ✓ tests/db-skins.test.ts (3 tests) 1063ms
+   ✓ операції зі скінами в базі Supabase > створений скін читається назад  653ms
+   ✓ операції зі скінами в базі Supabase > видалений скін не знаходиться  323ms
+ ✓ tests/upgrader.test.ts (4 tests) 261ms
+ ✓ tests/smoke.test.ts (1 test) 218ms
+
+ Test Files  5 passed (5)
+      Tests  18 passed (18)
+   Start at  15:04:41
+   Duration  8.23s (transform 200ms, setup 540ms, collect 200ms, tests 6.31s, environment 1ms, prepare 358ms)
+
