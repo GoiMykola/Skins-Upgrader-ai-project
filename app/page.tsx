@@ -9,8 +9,9 @@ export default function Home() {
     <div className="min-h-screen pb-20">
       <LiveDropsTicker />
 
-      <main className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-8">
+      <main className="mx-auto max-w-[1760px] px-4 pt-8 sm:px-6 lg:px-10 xl:px-12">
+        {/* Заголовок у смарагдовому стилі */}
+        <div className="text-center max-w-4xl mx-auto mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-emerald-300">
             <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
             Сезон 04 · Симулятор апгрейду скінів CS2
@@ -28,8 +29,10 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Інтерактивний Апгрейдер Widescreen */}
         <InteractiveUpgrader />
 
+        {/* Популярні скіни каталогу на всю ширину */}
         <section className="mt-16">
           <div className="flex items-center justify-between border-b border-white/[0.08] pb-4 mb-6">
             <div>
@@ -43,9 +46,9 @@ export default function Home() {
               Всі 2 246 скінів на Ринку →
             </Link>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {skins.slice(0, 8).map((skin) => (
-              <SkinTile key={skin.finish} skin={skin} action="Апгрейдити" href="/" />
+          <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {skins.slice(0, 8).map((skin, idx) => (
+              <SkinTile key={`trending-skin-${skin.finish}-${idx}`} skin={skin} action="Апгрейдити" href="/" />
             ))}
           </div>
         </section>

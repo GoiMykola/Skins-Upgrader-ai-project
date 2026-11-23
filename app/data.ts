@@ -25,7 +25,7 @@ export type MarketSkin = {
   maxFloat?: number;
 };
 
-// Розумне форматування цін (1 грн = 1 GC), щоб текст не ламав картки (420к, 185к, 8.9к)
+// Розумне форматування цін: 1 грн = 1 GC (420к, 185к, 8.9к, 1.2M)
 export function formatCoins(amount: number): string {
   if (!amount && amount !== 0) return "0";
   if (amount >= 1_000_000) {
@@ -40,7 +40,7 @@ export function formatCoins(amount: number): string {
     const val = amount / 1_000;
     return (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)) + "к";
   }
-  return amount.toString();
+  return amount.toLocaleString("uk-UA");
 }
 
 // Конвертація предмету з Ринку в формат Скіна для Апгрейдера та Інвентаря
@@ -58,7 +58,7 @@ export function marketSkinToSkin(item: MarketSkin): Skin {
   };
 }
 
-// Стартові скіни (реальні ринкові ціни Lis-Skins у грн)
+// Початковий пул скінів з офіційними назвами CS2 (★ Karambit | Fade виправлено)
 export const skins: Skin[] = [
   {
     name: "Neon Rider",
@@ -116,7 +116,7 @@ export const skins: Skin[] = [
     image: "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL6kJ_m-B1Z-ua6bbZrLOmsD2qvxONzouBlSxa-lA8lvziMgIr9HifOOV5kFJp2Ee9b4Rntm4GxY7_ntQHc2o1DmH6r3Hgcv3w4t-pXU6ZzrPHQjQnfcepq0dwfRJw",
   },
   {
-    name: "Fade (99.8%)",
+    name: "Fade",
     weapon: "★ Karambit",
     wear: "Прямо із заводу",
     price: 140000,

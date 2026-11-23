@@ -7,23 +7,24 @@ import SkinArt from "./skin-art";
 
 export default function SkinTile({
   skin,
-  action,
-  href = "/inventory",
+  action = "Виграти в апгрейді ⚡",
+  href = "/",
 }: {
   skin: Skin;
-  action: string;
+  action?: string;
   href?: string;
 }) {
   const accent = skin.accent || "#eb4b4b";
 
-  const handleSelectAsSource = () => {
+  // Скіни каталогу встановлюються виключно як БАЖАНА ЦІЛЬ (target), а не як твій скін
+  const handleSelectAsTarget = () => {
     try {
-      localStorage.setItem("goicoins_selected_source", JSON.stringify(skin));
+      localStorage.setItem("goicoins_selected_target", JSON.stringify(skin));
     } catch {}
   };
 
   return (
-    <article className="group relative rounded-2xl border border-white/[0.08] bg-[#0e111a] p-3.5 transition duration-200 hover:-translate-y-1 hover:border-white/20 hover:shadow-xl hover:shadow-black/50">
+    <article className="group relative rounded-2xl border border-white/[0.08] bg-[#0e111a] p-3.5 transition duration-200 hover:-translate-y-1 hover:border-emerald-500/30 hover:shadow-xl hover:shadow-black/50">
       <div
         className="absolute inset-0 rounded-2xl opacity-0 transition duration-300 group-hover:opacity-100 pointer-events-none"
         style={{
@@ -53,13 +54,13 @@ export default function SkinTile({
         </div>
         <p className="mt-1.5 text-xs text-slate-500">{skin.wear}</p>
         <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3">
-          <span className="font-mono text-sm font-bold text-amber-300">
+          <span className="font-mono text-sm font-bold text-emerald-400">
             {formatCoins(skin.price)} <span className="text-[10px]">GC</span>
           </span>
           <Link
             href={href}
-            onClick={handleSelectAsSource}
-            className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-3 py-1.5 text-xs font-black text-[#1a1005] hover:brightness-110"
+            onClick={handleSelectAsTarget}
+            className="rounded-xl bg-emerald-500 hover:bg-emerald-400 px-3 py-1.5 text-xs font-black text-[#05130d] transition"
           >
             {action}
           </Link>
