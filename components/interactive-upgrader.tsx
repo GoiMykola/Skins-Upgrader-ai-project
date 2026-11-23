@@ -12,9 +12,50 @@ import {
   toggleMute,
 } from "@/lib/sound-fx";
 
+type SpinMode = "fast" | "normal" | "long" | "suspense";
+
+const SPIN_CONFIGS: Record<
+  SpinMode,
+  { label: string; icon: string; duration: number; spins: number; easing: string; description: string }
+> = {
+  fast: {
+    label: "Швидка",
+    icon: "⚡",
+    duration: 1600,
+    spins: 3,
+    easing: "cubic-bezier(0.2, 0.9, 0.3, 1)",
+    description: "Миттєвий швидкий результат (1.6 с)",
+  },
+  normal: {
+    label: "Звичайна",
+    icon: "🎯",
+    duration: 3800,
+    spins: 6,
+    easing: "cubic-bezier(0.1, 0.88, 0.18, 1)",
+    description: "Класичний збалансований прокрут (3.8 с)",
+  },
+  long: {
+    label: "Довга",
+    icon: "⏳",
+    duration: 6500,
+    spins: 10,
+    easing: "cubic-bezier(0.08, 0.95, 0.12, 1)",
+    description: "Максимальна інтрига та напруга (6.5 с)",
+  },
+  suspense: {
+    label: "Азартна",
+    icon: "🔥",
+    duration: 5200,
+    spins: 8,
+    easing: "cubic-bezier(0.15, 1.15, 0.22, 1)",
+    description: "Драматичне зависання на межі сектора (5.2 с)",
+  },
+};
+
 export function InteractiveUpgrader() {
   const [sourceSkin, setSourceSkin] = useState<Skin>(inventorySkins[0] || skins[0]);
   const [targetSkin, setTargetSkin] = useState<Skin>(skins[1] || skins[2]);
+  const [spinMode, setSpinMode] = useState<SpinMode>("normal");
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [outcome, setOutcome] = useState<"win" | "loss" | null>(null);
@@ -26,6 +67,10 @@ export function InteractiveUpgrader() {
   const chance = Math.min(95, Math.max(1, Math.round(rawChance * 10) / 10));
   const multiplier = Math.round((targetSkin.price / sourceSkin.price) * 100) / 100;
   const winAngle = (chance / 100) * 360;
+
+  const circleCircumference = 270.2;
+  const winStrokeDash = (winAngle / 360) * circleCircumference;
+  const currentConfig = SPIN_CONFIGS[spinMode];
 
   const handleSoundToggle = () => {
     const next = toggleMute();
@@ -56,19 +101,21 @@ export function InteractiveUpgrader() {
       targetSectorAngle = winAngle + Math.random() * (360 - winAngle - 8) + 4;
     }
 
-    const spins = 360 * 6;
-    const finalDegree = rotation + spins + targetSectorAngle;
+    const totalSpins = 360 * currentConfig.spins;
+    const finalDegree = rotation + totalSpins + targetSectorAngle;
 
     requestAnimationFrame(() => {
       setRotation(finalDegree);
     });
 
+    const tickIntervalMs = spinMode === "fast" ? 75 : spinMode === "long" ? 170 : 130;
+    const maxTicks = Math.floor(currentConfig.duration / tickIntervalMs) - 2;
     let tickCount = 0;
     const interval = setInterval(() => {
       tickCount++;
       playTickSound(520 + (tickCount % 6) * 35);
-      if (tickCount > 30) clearInterval(interval);
-    }, 135);
+      if (tickCount >= maxTicks) clearInterval(interval);
+    }, tickIntervalMs);
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
@@ -77,18 +124,48 @@ export function InteractiveUpgrader() {
       setShowResultModal(true);
       if (isWin) playWinSound();
       else playLossSound();
-    }, 4500);
+    }, currentConfig.duration + 200);
   };
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0d1018]/95 p-6 shadow-2xl shadow-black/80 backdrop-blur-xl sm:p-8">
-      <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
+      {/* Верхній статус бар із перемикачем 4 режимів */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.06] pb-4">
         <div className="flex items-center gap-2.5">
           <span className="size-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_#f59e0b]" />
           <h2 className="text-sm font-black uppercase tracking-wider text-white">
             CS2 UPGRADER ARENA · РУЛЕТКА
           </h2>
         </div>
+
+        <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-black/40 p-1">
+          {(Object.keys(SPIN_CONFIGS) as SpinMode[]).map((mode) => {
+            const cfg = SPIN_CONFIGS[mode];
+            const isActive = spinMode === mode;
+            return (
+              <button
+                key={mode}
+                onClick={() => {
+                  if (!isSpinning) {
+                    playClickSound();
+                    setSpinMode(mode);
+                  }
+                }}
+                disabled={isSpinning}
+                title={cfg.description}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                  isActive
+                    ? "bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1104] shadow-md shadow-orange-500/20"
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <span>{cfg.icon}</span>
+                <span>{cfg.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
         <button
           onClick={handleSoundToggle}
           className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-slate-400 hover:text-white"
@@ -97,8 +174,8 @@ export function InteractiveUpgrader() {
         </button>
       </div>
 
-      {/* 3-Колонкова арена: [Твій скін] [КОЛЕСО ПО ЦЕНТРУ] [Цільовий скін] */}
-      <div className="mt-8 grid grid-cols-1 items-center gap-6 lg:grid-cols-[1fr_1.35fr_1fr]">
+      {/* 3-Колонкова арена */}
+      <div className="mt-8 grid grid-cols-1 items-center gap-6 lg:grid-cols-[1fr_1.45fr_1fr]">
         {/* ЛІВА КОЛОНКА */}
         <div className="flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
@@ -144,26 +221,26 @@ export function InteractiveUpgrader() {
           </div>
         </div>
 
-        {/* ЦЕНТРАЛЬНА КОЛОНКА: РУЛЕТКА */}
+        {/* ЦЕНТРАЛЬНА КОЛОНКА: ЗБІЛЬШЕНЕ КОЛЕСО ТА ТОНКИЙ ТРЕК */}
         <div className="flex flex-col items-center justify-center py-2">
-          <div className="relative flex size-72 items-center justify-center sm:size-80">
+          <div className="relative flex size-80 items-center justify-center sm:size-92">
             <svg className="size-full -rotate-90 transform" viewBox="0 0 100 100">
               <circle
                 cx="50"
                 cy="50"
-                r="40"
+                r="43"
                 fill="transparent"
-                stroke="#181d29"
-                strokeWidth="10"
+                stroke="#151924"
+                strokeWidth="6"
               />
               <circle
                 cx="50"
                 cy="50"
-                r="40"
+                r="43"
                 fill="transparent"
                 stroke="url(#winGradient)"
-                strokeWidth="10"
-                strokeDasharray={`${(winAngle / 360) * 251.2} 251.2`}
+                strokeWidth="6"
+                strokeDasharray={`${winStrokeDash} ${circleCircumference}`}
                 strokeLinecap="round"
                 className="transition-all duration-300"
               />
@@ -181,17 +258,17 @@ export function InteractiveUpgrader() {
               style={{
                 transform: `rotate(${rotation}deg)`,
                 transition: isSpinning
-                  ? "transform 4.5s cubic-bezier(0.1, 0.88, 0.18, 1)"
+                  ? `transform ${currentConfig.duration}ms ${currentConfig.easing}`
                   : "none",
               }}
             >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <div className="size-4 rotate-45 rounded-xs bg-amber-400 shadow-[0_0_18px_#f59e0b] border-2 border-white" />
-                <div className="h-16 w-1 bg-gradient-to-b from-amber-400 via-amber-400/60 to-transparent shadow-[0_0_10px_#f59e0b]" />
+              <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                <div className="size-3.5 rotate-45 rounded-xs bg-amber-400 shadow-[0_0_18px_#f59e0b] border-2 border-white" />
+                <div className="h-16 w-0.5 bg-gradient-to-b from-amber-400 via-amber-400/60 to-transparent shadow-[0_0_10px_#f59e0b]" />
               </div>
             </div>
 
-            <div className="absolute flex size-40 flex-col items-center justify-center rounded-full border border-white/10 bg-[#0a0d14] shadow-inner text-center">
+            <div className="absolute flex size-44 sm:size-48 flex-col items-center justify-center rounded-full border border-white/10 bg-[#0a0d14] shadow-inner text-center">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Шанс апгрейду
               </span>
@@ -199,10 +276,12 @@ export function InteractiveUpgrader() {
               <span className="mt-1 rounded-full bg-violet-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-violet-300 border border-violet-500/30">
                 ×{multiplier}
               </span>
+              <span className="mt-1 text-[10px] text-slate-500 font-semibold">
+                Режим: {currentConfig.label}
+              </span>
             </div>
           </div>
 
-          {/* Швидкі множники */}
           <div className="mt-5 flex flex-wrap justify-center gap-1.5">
             {[1.5, 2.0, 3.0, 5.0, 10.0, 15.0].map((m) => (
               <button

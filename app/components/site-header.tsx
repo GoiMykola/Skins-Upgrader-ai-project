@@ -8,6 +8,7 @@ import { playClickSound, playCoinSound } from "@/lib/sound-fx";
 const navigation = [
   { href: "/", label: "Апгрейдер" },
   { href: "/catalog", label: "Каталог" },
+  { href: "/market", label: "Ринок" },
   { href: "/inventory", label: "Інвентар" },
   { href: "/leaderboard", label: "Лідери" },
 ];
