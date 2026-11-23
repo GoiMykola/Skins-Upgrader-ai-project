@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { Skin } from "@/app/data";
 import { formatCoins, skins, inventorySkins } from "@/app/data";
 import SkinArt from "@/app/components/skin-art";
@@ -11,19 +11,22 @@ import {
   playLossSound,
   toggleMute,
 } from "@/lib/sound-fx";
+import {
+  getStoredInventory,
+  addSkinToInventory,
+} from "@/lib/inventory-storage";
 
 type SpinMode = "fast" | "normal" | "long" | "suspense";
 
 const SPIN_CONFIGS: Record<
   SpinMode,
-  { label: string; icon: string; duration: number; spins: number; easing: string; description: string }
+  { label: string; icon: string; duration: number; spins: number; description: string }
 > = {
   fast: {
     label: "Швидка",
     icon: "⚡",
     duration: 1600,
     spins: 3,
-    easing: "cubic-bezier(0.2, 0.9, 0.3, 1)",
     description: "Миттєвий швидкий результат (1.6 с)",
   },
   normal: {
@@ -31,7 +34,6 @@ const SPIN_CONFIGS: Record<
     icon: "🎯",
     duration: 3800,
     spins: 6,
-    easing: "cubic-bezier(0.1, 0.88, 0.18, 1)",
     description: "Класичний збалансований прокрут (3.8 с)",
   },
   long: {
@@ -39,29 +41,48 @@ const SPIN_CONFIGS: Record<
     icon: "⏳",
     duration: 6500,
     spins: 10,
-    easing: "cubic-bezier(0.08, 0.95, 0.12, 1)",
     description: "Максимальна інтрига та напруга (6.5 с)",
   },
   suspense: {
     label: "Азартна",
     icon: "🔥",
-    duration: 5200,
-    spins: 8,
-    easing: "cubic-bezier(0.15, 1.15, 0.22, 1)",
-    description: "Драматичне зависання на межі сектора (5.2 с)",
+    duration: 5600,
+    spins: 7,
+    description: "Швидкий розгін + 3 секунди повільного повзунка напруги",
   },
 };
 
 export function InteractiveUpgrader() {
+  const [userInventory, setUserInventory] = useState<Skin[]>(inventorySkins);
   const [sourceSkin, setSourceSkin] = useState<Skin>(inventorySkins[0] || skins[0]);
   const [targetSkin, setTargetSkin] = useState<Skin>(skins[1] || skins[2]);
   const [spinMode, setSpinMode] = useState<SpinMode>("normal");
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const [spinTransition, setSpinTransition] = useState<string>("none");
   const [outcome, setOutcome] = useState<"win" | "loss" | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
   const [muted, setMuted] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const crawlIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const loaded = getStoredInventory();
+    setUserInventory(loaded);
+    if (loaded.length > 0 && loaded[0]) {
+      setSourceSkin(loaded[0]);
+    }
+
+    const handleInvUpdate = (e: CustomEvent<Skin[]>) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setUserInventory(e.detail);
+      }
+    };
+    window.addEventListener("goi-inventory-updated", handleInvUpdate as EventListener);
+    return () => {
+      window.removeEventListener("goi-inventory-updated", handleInvUpdate as EventListener);
+    };
+  }, []);
 
   const rawChance = (sourceSkin.price / targetSkin.price) * 100 * 0.95;
   const chance = Math.min(95, Math.max(1, Math.round(rawChance * 10) / 10));
@@ -101,35 +122,90 @@ export function InteractiveUpgrader() {
       targetSectorAngle = winAngle + Math.random() * (360 - winAngle - 8) + 4;
     }
 
-    const totalSpins = 360 * currentConfig.spins;
-    const finalDegree = rotation + totalSpins + targetSectorAngle;
+    if (spinMode === "suspense") {
+      const crawlDegrees = 110;
+      const totalDegrees = 360 * 7 + targetSectorAngle;
+      const intermediateDegree = rotation + totalDegrees - crawlDegrees;
+      const finalDegree = rotation + totalDegrees;
 
-    requestAnimationFrame(() => {
-      setRotation(finalDegree);
-    });
+      setSpinTransition("transform 2400ms cubic-bezier(0.12, 0.85, 0.25, 1)");
+      requestAnimationFrame(() => {
+        setRotation(intermediateDegree);
+      });
 
-    const tickIntervalMs = spinMode === "fast" ? 75 : spinMode === "long" ? 170 : 130;
-    const maxTicks = Math.floor(currentConfig.duration / tickIntervalMs) - 2;
-    let tickCount = 0;
-    const interval = setInterval(() => {
-      tickCount++;
-      playTickSound(520 + (tickCount % 6) * 35);
-      if (tickCount >= maxTicks) clearInterval(interval);
-    }, tickIntervalMs);
+      let tickFastCount = 0;
+      const fastInterval = setInterval(() => {
+        tickFastCount++;
+        playTickSound(550 + (tickFastCount % 5) * 40);
+        if (tickFastCount >= 18) clearInterval(fastInterval);
+      }, 125);
 
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setIsSpinning(false);
-      setOutcome(isWin ? "win" : "loss");
-      setShowResultModal(true);
-      if (isWin) playWinSound();
-      else playLossSound();
-    }, currentConfig.duration + 200);
+      setTimeout(() => {
+        setSpinTransition("transform 3000ms linear");
+        setRotation(finalDegree);
+
+        let crawlTicks = 0;
+        crawlIntervalRef.current = setInterval(() => {
+          crawlTicks++;
+          playTickSound(490 + (crawlTicks % 3) * 35);
+          if (crawlTicks >= 12) {
+            if (crawlIntervalRef.current) clearInterval(crawlIntervalRef.current);
+          }
+        }, 250);
+
+        setTimeout(() => {
+          finishSpin(isWin);
+        }, 3100);
+      }, 2400);
+
+    } else {
+      const totalSpins = 360 * currentConfig.spins;
+      const finalDegree = rotation + totalSpins + targetSectorAngle;
+      const duration = currentConfig.duration;
+      const easing =
+        spinMode === "fast"
+          ? "cubic-bezier(0.2, 0.9, 0.3, 1)"
+          : spinMode === "long"
+          ? "cubic-bezier(0.08, 0.95, 0.12, 1)"
+          : "cubic-bezier(0.1, 0.88, 0.18, 1)";
+
+      setSpinTransition(`transform ${duration}ms ${easing}`);
+      requestAnimationFrame(() => {
+        setRotation(finalDegree);
+      });
+
+      const tickMs = spinMode === "fast" ? 75 : spinMode === "long" ? 170 : 130;
+      const maxTicks = Math.floor(duration / tickMs) - 2;
+      let tickCount = 0;
+      const interval = setInterval(() => {
+        tickCount++;
+        playTickSound(520 + (tickCount % 6) * 35);
+        if (tickCount >= maxTicks) clearInterval(interval);
+      }, tickMs);
+
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        finishSpin(isWin);
+      }, duration + 150);
+    }
+  };
+
+  const finishSpin = (isWin: boolean) => {
+    setIsSpinning(false);
+    setOutcome(isWin ? "win" : "loss");
+    setShowResultModal(true);
+
+    if (isWin) {
+      playWinSound();
+      const updatedInv = addSkinToInventory(targetSkin);
+      setUserInventory(updatedInv);
+    } else {
+      playLossSound();
+    }
   };
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0d1018]/95 p-6 shadow-2xl shadow-black/80 backdrop-blur-xl sm:p-8">
-      {/* Верхній статус бар із перемикачем 4 режимів */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.06] pb-4">
         <div className="flex items-center gap-2.5">
           <span className="size-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_#f59e0b]" />
@@ -174,10 +250,10 @@ export function InteractiveUpgrader() {
         </button>
       </div>
 
-      {/* 3-Колонкова арена */}
-      <div className="mt-8 grid grid-cols-1 items-center gap-6 lg:grid-cols-[1fr_1.45fr_1fr]">
+      {/* 3-КОЛОНКОВА АРЕНА (ІДЕАЛЬНО ВИРІВНЯНА ПО ЦЕНТРУ) */}
+      <div className="mt-8 grid grid-cols-1 items-center gap-6 lg:grid-cols-[1fr_auto_1fr]">
         {/* ЛІВА КОЛОНКА */}
-        <div className="flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
+        <div className="w-full max-w-[340px] justify-self-center lg:justify-self-end flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -201,7 +277,7 @@ export function InteractiveUpgrader() {
               Обрати з інвентаря:
             </span>
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              {inventorySkins.map((s) => (
+              {userInventory.map((s) => (
                 <button
                   key={s.finish}
                   onClick={() => {
@@ -221,8 +297,8 @@ export function InteractiveUpgrader() {
           </div>
         </div>
 
-        {/* ЦЕНТРАЛЬНА КОЛОНКА: ЗБІЛЬШЕНЕ КОЛЕСО ТА ТОНКИЙ ТРЕК */}
-        <div className="flex flex-col items-center justify-center py-2">
+        {/* ЦЕНТРАЛЬНА КОЛОНКА: РІВНО ПО ЦЕНТРУ */}
+        <div className="flex flex-col items-center justify-center justify-self-center px-2">
           <div className="relative flex size-80 items-center justify-center sm:size-92">
             <svg className="size-full -rotate-90 transform" viewBox="0 0 100 100">
               <circle
@@ -252,19 +328,18 @@ export function InteractiveUpgrader() {
               </defs>
             </svg>
 
-            {/* СПРАВЖНЯ ОБЕРТОВА СТРІЛКА З НЕОНОВИМ МАРКЕРОМ */}
+            {/* СПРАВЖНЯ ЛАЗЕРНА СТРІЛКА-ШЕВРОН (ЗАМІСТЬ РОМБА) */}
             <div
               className="absolute inset-0 flex items-center justify-center pointer-events-none"
               style={{
                 transform: `rotate(${rotation}deg)`,
-                transition: isSpinning
-                  ? `transform ${currentConfig.duration}ms ${currentConfig.easing}`
-                  : "none",
+                transition: isSpinning ? spinTransition : "none",
               }}
             >
-              <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <div className="size-3.5 rotate-45 rounded-xs bg-amber-400 shadow-[0_0_18px_#f59e0b] border-2 border-white" />
-                <div className="h-16 w-0.5 bg-gradient-to-b from-amber-400 via-amber-400/60 to-transparent shadow-[0_0_10px_#f59e0b]" />
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                <div className="size-0 border-x-[7px] border-x-transparent border-t-[12px] border-t-amber-400 drop-shadow-[0_0_12px_#f59e0b]" />
+                <div className="size-1.5 rounded-full bg-white shadow-[0_0_8px_#ffffff] -mt-1" />
+                <div className="h-14 w-0.5 bg-gradient-to-b from-amber-400 via-amber-400/40 to-transparent shadow-[0_0_8px_#f59e0b]" />
               </div>
             </div>
 
@@ -296,7 +371,7 @@ export function InteractiveUpgrader() {
         </div>
 
         {/* ПРАВА КОЛОНКА */}
-        <div className="flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
+        <div className="w-full max-w-[340px] justify-self-center lg:justify-self-start flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400">
@@ -364,8 +439,8 @@ export function InteractiveUpgrader() {
                   🎉
                 </div>
                 <h3 className="mt-4 text-2xl font-black text-white">УСПІШНИЙ АПГРЕЙД!</h3>
-                <p className="mt-1 text-sm text-emerald-400">
-                  Ти виграв {targetSkin.weapon} | {targetSkin.name}!
+                <p className="mt-1 text-sm text-emerald-400 font-bold">
+                  {targetSkin.weapon} | {targetSkin.name} додано до твого інвентаря!
                 </p>
                 <div className="my-4">
                   <SkinArt skin={targetSkin} className="h-32" />
@@ -383,15 +458,25 @@ export function InteractiveUpgrader() {
                 </div>
               </>
             )}
-            <button
-              onClick={() => {
-                playClickSound();
-                setShowResultModal(false);
-              }}
-              className="mt-6 w-full rounded-xl bg-white/10 py-3 text-sm font-bold text-white hover:bg-white/20 transition"
-            >
-              Продовжити гру
-            </button>
+            <div className="mt-6 flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  playClickSound();
+                  setShowResultModal(false);
+                }}
+                className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-3 text-sm font-black text-[#1a1104] shadow-md hover:brightness-110 transition"
+              >
+                Продовжити апгрейд ⚡
+              </button>
+              {outcome === "win" && (
+                <a
+                  href="/inventory"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold text-slate-300 hover:bg-white/10 transition"
+                >
+                  Переглянути в інвентарі →
+                </a>
+              )}
+            </div>
           </div>
         </div>
       )}
