@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import type { Skin } from "@/app/data";
-import { formatCoins, skins, inventorySkins } from "@/app/data";
+/* eslint-disable @next/next/no-img-element */
+import { useState, useRef, useEffect, useMemo } from "react";
+import type { Skin, MarketSkin } from "@/app/data";
+import { formatCoins, skins, marketSkinToSkin } from "@/app/data";
 import SkinArt from "@/app/components/skin-art";
 import {
   playClickSound,
@@ -71,6 +72,13 @@ export function InteractiveUpgrader() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [muted, setMuted] = useState(false);
 
+  // Модалка вибору з ринку
+  const [marketSkins, setMarketSkins] = useState<MarketSkin[]>([]);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerSlot, setPickerSlot] = useState<"source" | "target">("target");
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [pickerCategory, setPickerCategory] = useState("all");
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const crawlIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -80,7 +88,6 @@ export function InteractiveUpgrader() {
     if (inv.length > 0) setSourceSkin(inv[0]);
     setMuted(isMuted());
 
-    // Перевіряємо вибір джерела з інвентаря
     try {
       const selectedSourceRaw = localStorage.getItem("goicoins_selected_source");
       if (selectedSourceRaw) {
@@ -92,7 +99,6 @@ export function InteractiveUpgrader() {
       }
     } catch {}
 
-    // Перевіряємо вибір цілі з Ринку
     try {
       const selectedTargetRaw = localStorage.getItem("goicoins_selected_target");
       if (selectedTargetRaw) {
@@ -103,6 +109,11 @@ export function InteractiveUpgrader() {
         }
       }
     } catch {}
+
+    fetch("/data/cs2-market.json")
+      .then((res) => res.json())
+      .then((data) => setMarketSkins(data))
+      .catch(() => {});
 
     const handleInvUpdate = (e: CustomEvent<InventoryItem[]>) => {
       if (e.detail) setUserInventory(e.detail);
@@ -138,6 +149,40 @@ export function InteractiveUpgrader() {
     );
     setTargetSkin(bestMatch);
   };
+
+  const openMarketPicker = (slot: "source" | "target") => {
+    playClickSound();
+    setPickerSlot(slot);
+    setPickerSearch("");
+    setPickerCategory("all");
+    setIsPickerOpen(true);
+  };
+
+  const handleSelectFromPicker = (item: MarketSkin) => {
+    playClickSound();
+    const converted = marketSkinToSkin(item);
+    if (pickerSlot === "target") {
+      setTargetSkin(converted);
+    } else {
+      setSourceSkin(converted);
+    }
+    setIsPickerOpen(false);
+  };
+
+  const filteredPickerSkins = useMemo(() => {
+    return marketSkins.filter((s) => {
+      if (pickerSearch.trim()) {
+        const q = pickerSearch.toLowerCase().trim();
+        if (!s.fullName.toLowerCase().includes(q) && !s.weapon.toLowerCase().includes(q)) return false;
+      }
+      if (pickerCategory !== "all") {
+        if (pickerCategory === "smgs" && s.category !== "smgs") return false;
+        else if (pickerCategory === "heavy" && s.category !== "heavy") return false;
+        else if (pickerCategory !== "smgs" && pickerCategory !== "heavy" && s.category !== pickerCategory) return false;
+      }
+      return true;
+    }).slice(0, 48);
+  }, [marketSkins, pickerSearch, pickerCategory]);
 
   const handleUpgrade = () => {
     if (isSpinning) return;
@@ -289,18 +334,18 @@ export function InteractiveUpgrader() {
 
       {/* 3-Колонкова арена */}
       <div className="mt-8 grid grid-cols-1 items-center gap-6 lg:grid-cols-[1fr_auto_1fr]">
-        {/* ЛІВА КОЛОНКА (Твій скін) */}
+        {/* ЛІВА КОЛОНКА (Твій скін / Що апгрейдимо) */}
         <div className="w-full max-w-[340px] justify-self-center lg:justify-self-end flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Твій скін (інвентар)
+                Твій скін (для апгрейду)
               </span>
               <span className="font-mono text-xs font-bold text-amber-300">
                 {formatCoins(sourceSkin.price)} GC
               </span>
             </div>
-            <div className="my-3">
+            <div className="my-3 cursor-pointer" onClick={() => openMarketPicker("source")} title="Клікни, щоб обрати інший скін">
               <SkinArt skin={sourceSkin} className="h-32" />
             </div>
             <p className="font-bold text-white truncate text-base">
@@ -310,9 +355,17 @@ export function InteractiveUpgrader() {
           </div>
 
           <div className="mt-4 border-t border-white/[0.06] pt-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1.5">
-              Обрати з інвентаря:
-            </span>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Твій інвентар:
+              </span>
+              <button
+                onClick={() => openMarketPicker("source")}
+                className="text-[10px] font-bold text-amber-400 hover:text-amber-300 underline"
+              >
+                З Ринку 🛒
+              </button>
+            </div>
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
               {userInventory.map((s) => (
                 <button
@@ -334,7 +387,7 @@ export function InteractiveUpgrader() {
           </div>
         </div>
 
-        {/* ЦЕНТРАЛЬНА КОЛОНКА: ЗБІЛЬШЕНЕ КОЛЕСО СУВОРО ПО ЦЕНТРУ */}
+        {/* ЦЕНТРАЛЬНА КОЛОНКА: КОЛЕСО ПО ЦЕНТРУ */}
         <div className="flex flex-col items-center justify-center justify-self-center px-2">
           <div className="relative flex size-80 items-center justify-center sm:size-92">
             <svg className="size-full -rotate-90 transform" viewBox="0 0 100 100">
@@ -358,7 +411,7 @@ export function InteractiveUpgrader() {
               />
             </svg>
 
-            {/* Стрілка: Золотий лазерний шеврон, що вказує прямо в доріжку */}
+            {/* Стрілка: Золотий лазерний шеврон */}
             <div
               className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center will-change-transform"
               style={{
@@ -373,7 +426,7 @@ export function InteractiveUpgrader() {
               </div>
             </div>
 
-            {/* Центр рулетки з показниками */}
+            {/* Центр рулетки */}
             <div className="absolute flex flex-col items-center justify-center text-center">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 ШАНС АПГРЕЙДУ
@@ -405,7 +458,7 @@ export function InteractiveUpgrader() {
           </div>
         </div>
 
-        {/* ПРАВА КОЛОНКА (Ціль) */}
+        {/* ПРАВА КОЛОНКА (Ціль / Що хочемо виграти) */}
         <div className="w-full max-w-[340px] justify-self-center lg:justify-self-start flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
             <div className="flex items-center justify-between">
@@ -416,7 +469,7 @@ export function InteractiveUpgrader() {
                 {formatCoins(targetSkin.price)} GC
               </span>
             </div>
-            <div className="my-3">
+            <div className="my-3 cursor-pointer" onClick={() => openMarketPicker("target")} title="Клікни, щоб обрати іншу ціль">
               <SkinArt skin={targetSkin} className="h-32" />
             </div>
             <p className="font-bold text-white truncate text-base">
@@ -428,14 +481,14 @@ export function InteractiveUpgrader() {
           <div className="mt-4 border-t border-white/[0.06] pt-3">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                Обрати бажану ціль:
+                Швидка ціль:
               </span>
-              <a
-                href="/market"
+              <button
+                onClick={() => openMarketPicker("target")}
                 className="text-[10px] font-bold text-amber-400 hover:text-amber-300 underline"
               >
-                Всі з Ринку →
-              </a>
+                Обрати з Ринку (2.2к) 🔍
+              </button>
             </div>
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
               {skins.map((s, idx) => (
@@ -473,6 +526,102 @@ export function InteractiveUpgrader() {
           {isSpinning ? "Крутимо рулетку..." : "АПГРЕЙДИТИ СКІН ⚡"}
         </button>
       </div>
+
+      {/* Модальне вікно вибору будь-якого скіна з Ринку CS2 (2 246 скінів) */}
+      {isPickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="w-full max-w-4xl max-h-[85vh] flex flex-col rounded-3xl border border-white/10 bg-[#0e111a] p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                  {pickerSlot === "target" ? "🎯 ОБЕРИ БАЖАНУ ЦІЛЬ ДЛЯ АПГРЕЙДУ" : "🎒 ОБЕРИ СКІН ДЛЯ АПГРЕЙДУ"}
+                </span>
+                <h3 className="text-xl font-black text-white">Каталог скінів CS2 (2 246 скінів)</h3>
+              </div>
+              <button
+                onClick={() => setIsPickerOpen(false)}
+                className="size-8 rounded-full border border-white/10 bg-white/5 text-sm font-bold text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="my-4 space-y-3">
+              <input
+                type="text"
+                value={pickerSearch}
+                onChange={(e) => setPickerSearch(e.target.value)}
+                placeholder="Швидкий пошук: Dragon Lore, Doppler, Fade, AK-47, Printstream..."
+                className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-amber-400"
+              />
+              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                {[
+                  { id: "all", label: "Всі" },
+                  { id: "knives", label: "Ножі ★" },
+                  { id: "gloves", label: "Рукавички ★" },
+                  { id: "snipers", label: "Снайперки" },
+                  { id: "rifles", label: "Гвинтівки" },
+                  { id: "pistols", label: "Пістолети" },
+                  { id: "smgs", label: "ПП" },
+                  { id: "heavy", label: "Важке" },
+                ].map((c) => (
+                  <button
+                    key={`picker-cat-${c.id}`}
+                    onClick={() => {
+                      playClickSound();
+                      setPickerCategory(c.id);
+                    }}
+                    className={`rounded-lg px-3 py-1 text-xs font-bold transition ${
+                      pickerCategory === c.id
+                        ? "bg-amber-400 text-[#1a1005]"
+                        : "border border-white/5 bg-white/5 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1 pr-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {filteredPickerSkins.map((item) => (
+                <button
+                  key={`picker-skin-${item.id}`}
+                  onClick={() => handleSelectFromPicker(item)}
+                  className="group relative flex flex-col justify-between rounded-xl border border-white/10 bg-[#080a10] p-3 text-left transition hover:border-amber-400 hover:bg-amber-400/5 hover:-translate-y-0.5"
+                >
+                  <div
+                    className="relative flex h-24 items-center justify-center overflow-hidden rounded-lg bg-black/40"
+                    style={{
+                      backgroundImage: `radial-gradient(circle at center, ${item.rarityColor}20, transparent 75%)`,
+                    }}
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.fullName}
+                      className="max-h-[85%] max-w-[90%] object-contain drop-shadow transition-transform group-hover:scale-110"
+                      loading="lazy"
+                    />
+                    <span
+                      className="absolute top-1 right-1 rounded px-1.5 py-0.2 text-[8px] font-black uppercase"
+                      style={{ color: item.rarityColor }}
+                    >
+                      {item.rarityUk}
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase truncate">{item.weapon}</p>
+                    <p className="text-xs font-bold text-white truncate">{item.name}</p>
+                    <p className="font-mono text-xs font-black text-amber-300 mt-1">
+                      {formatCoins(item.price)} GC
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Модальне вікно результату */}
       {showResultModal && (

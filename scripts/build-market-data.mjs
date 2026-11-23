@@ -2,24 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 
 async function main() {
-  console.log("⚡ Завантажуємо повну базу даних скінів CS2 (Valve / Steam CDN)...");
-  
-  let raw = [];
-  try {
-    const res = await fetch("https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins.json");
-    if (!res.ok) throw new Error("HTTP error " + res.status);
-    raw = await res.json();
-    console.log(`✓ Успішно завантажено ${raw.length} офіційних скінів CS2 з мережі!`);
-  } catch (err) {
-    console.warn("⚠️ Помилка завантаження з мережі:", err.message);
-    const localBackup = path.resolve(process.cwd(), "public", "data", "cs2-market.json");
-    if (fs.existsSync(localBackup)) {
-      console.log("✓ Використовуємо існуючий локальний файл public/data/cs2-market.json");
-      return;
-    }
-  }
+  console.log("⚡ Оновлюємо базу даних скінів CS2...");
+  const res = await fetch("https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/skins.json");
+  if (!res.ok) throw new Error("HTTP error " + res.status);
+  const raw = await res.json();
 
-  // Функція точного розрахунку ринкових цін на базі Lis-Skins та Steam Market (1 грн = 1 GC)
   function getSkinPrice(skin) {
     const name = skin.name || "";
     const cat = skin.category?.name || "";
@@ -27,47 +14,48 @@ async function main() {
     const weapon = skin.weapon?.name || "";
     const pattern = skin.pattern?.name || "";
 
-    // 1. Легендарні та топ-оверрайди (актуальні ціни в грн на Lis-Skins)
-    if (name.includes("Dragon Lore")) return 450000;
-    if (name.includes("Gungnir")) return 380000;
-    if (name.includes("Howl")) return 185000;
-    if (name.includes("Wild Lotus")) return 320000;
-    if (name.includes("Butterfly") && pattern.includes("Emerald")) return 420000;
-    if (name.includes("Butterfly") && pattern.includes("Sapphire")) return 390000;
-    if (name.includes("Butterfly") && pattern.includes("Ruby")) return 340000;
-    if (name.includes("Butterfly") && pattern.includes("Gamma Doppler")) return 95000;
-    if (name.includes("Butterfly") && pattern.includes("Fade")) return 165000;
-    if (name.includes("Butterfly") && pattern.includes("Doppler")) return 82000;
-    if (name.includes("Karambit") && pattern.includes("Fade")) return 140000;
-    if (name.includes("Karambit") && pattern.includes("Gamma Doppler")) return 78000;
-    if (name.includes("Karambit") && pattern.includes("Doppler")) return 65000;
-    if (name.includes("Karambit") && pattern.includes("Case Hardened")) return 38000;
-    if (name.includes("M9 Bayonet") && pattern.includes("Lore")) return 85000;
-    if (name.includes("M9 Bayonet") && pattern.includes("Fade")) return 75000;
-    if (name.includes("M9 Bayonet") && pattern.includes("Doppler")) return 55000;
-    if (name.includes("Vice")) return 280000;
-    if (name.includes("Pandora")) return 390000;
-    if (name.includes("Fire Serpent")) return 45000;
-    if (name.includes("Gold Arabesque")) return 110000;
-    if (name.includes("Welcome to the Jungle")) return 85000;
-    if (name.includes("Medusa")) return 110000;
-    if (name.includes("The Prince")) return 120000;
-    if (name.includes("Desert Hydra")) return 95000;
-    if (name.includes("Hot Rod")) return 45000;
-    if (name.includes("Blue Phosphor")) return 32000;
+    if (name.includes("Dragon Lore") && weapon === "AWP") return 450000;
+    if (name.includes("Gungnir") && weapon === "AWP") return 380000;
+    if (name.includes("Howl") && weapon === "M4A4") return 185000;
+    if (name.includes("Wild Lotus") && weapon === "AK-47") return 320000;
+    if (weapon.includes("Butterfly") && pattern.includes("Emerald")) return 420000;
+    if (weapon.includes("Butterfly") && pattern.includes("Sapphire")) return 390000;
+    if (weapon.includes("Butterfly") && pattern.includes("Ruby")) return 340000;
+    if (weapon.includes("Butterfly") && pattern.includes("Gamma Doppler")) return 95000;
+    if (weapon.includes("Butterfly") && pattern.includes("Fade")) return 165000;
+    if (weapon.includes("Butterfly") && pattern.includes("Doppler")) return 82000;
+    if (weapon.includes("Karambit") && pattern.includes("Fade")) return 140000;
+    if (weapon.includes("Karambit") && pattern.includes("Gamma Doppler")) return 78000;
+    if (weapon.includes("Karambit") && pattern.includes("Doppler")) return 65000;
+    if (weapon.includes("Karambit") && pattern.includes("Case Hardened")) return 38000;
+    if (weapon.includes("M9 Bayonet") && pattern.includes("Lore")) return 85000;
+    if (weapon.includes("M9 Bayonet") && pattern.includes("Fade")) return 75000;
+    if (weapon.includes("M9 Bayonet") && pattern.includes("Doppler")) return 55000;
+    
+    // Рукавички (перевіряємо строго тип Gloves)
+    if (name.includes("Vice") && (cat === "Gloves" || weapon.includes("Gloves") || weapon.includes("Wraps"))) return 280000;
+    if (name.includes("Pandora") && (cat === "Gloves" || weapon.includes("Gloves") || weapon.includes("Wraps"))) return 390000;
+
+    if (name.includes("Fire Serpent") && weapon === "AK-47") return 45000;
+    if (name.includes("Gold Arabesque") && weapon === "AK-47") return 110000;
+    if (name.includes("Welcome to the Jungle") && weapon === "M4A1-S") return 85000;
+    if (name.includes("Medusa") && weapon === "AWP") return 110000;
+    if (name.includes("The Prince") && weapon === "AWP") return 120000;
+    if (name.includes("Desert Hydra") && weapon === "AWP") return 95000;
+    if (name.includes("Hot Rod") && weapon === "M4A1-S") return 45000;
+    if (name.includes("Blue Phosphor") && weapon === "M4A1-S") return 32000;
     if (name.includes("Blaze") && weapon === "Desert Eagle") return 26000;
     if (name.includes("Case Hardened") && weapon === "AK-47") return 18500;
     if (name.includes("Vulcan") && weapon === "AK-47") return 14000;
     if (name.includes("Printstream") && weapon === "M4A1-S") return 7200;
     if (name.includes("Printstream") && weapon === "AWP") return 6400;
     if (name.includes("Printstream") && weapon === "Desert Eagle") return 3900;
-    if (name.includes("Bloodsport")) return 5200;
-    if (name.includes("Neon Rider")) return 4200;
-    if (name.includes("Hyper Beast")) return 2800;
-    if (name.includes("Kill Confirmed")) return 3200;
-    if (name.includes("Asiimov")) return 3400;
+    if (name.includes("Bloodsport") && weapon === "AK-47") return 5200;
+    if (name.includes("Neon Rider") && weapon === "AK-47") return 4200;
+    if (name.includes("Hyper Beast") && weapon === "AWP") return 2800;
+    if (name.includes("Kill Confirmed") && weapon === "USP-S") return 3200;
+    if (name.includes("Asiimov") && weapon === "AWP") return 3400;
 
-    // Псевдовипадковий детермінований сід для органічної градації цін
     let hash = 0;
     const str = skin.id || name;
     for (let i = 0; i < str.length; i++) {
@@ -76,7 +64,6 @@ async function main() {
     }
     const seed = Math.abs(hash) % 1000;
 
-    // 2. Ножі
     if (cat === "Knives" || weapon.includes("Knife") || weapon.includes("Bayonet") || weapon.includes("Karambit")) {
       let knifeTier = 12000;
       if (/Butterfly|Karambit|M9 Bayonet/.test(weapon)) knifeTier = 38000;
@@ -95,7 +82,6 @@ async function main() {
       return Math.round((knifeTier * mult) + (seed * 8));
     }
 
-    // 3. Рукавички
     if (cat === "Gloves" || weapon.includes("Gloves") || weapon.includes("Wraps")) {
       let gloveTier = 6500;
       if (/Sport|Specialist/.test(weapon)) gloveTier = 18000;
@@ -103,12 +89,9 @@ async function main() {
       return Math.round(gloveTier + (seed * 9));
     }
 
-    // 4. Вогнепальна зброя за рідкістю
     switch (rarity) {
-      case "Contraband":
-        return 185000;
-      case "Extraordinary":
-        return Math.round(15000 + (seed * 15));
+      case "Contraband": return 185000;
+      case "Extraordinary": return Math.round(15000 + (seed * 15));
       case "Covert": {
         const base = (cat === "Rifles" || weapon === "AWP") ? 2200 : 1200;
         return Math.round(base + (seed * 4));
@@ -121,14 +104,10 @@ async function main() {
         const base = (cat === "Rifles" || weapon === "AWP") ? 160 : 110;
         return Math.round(base + (seed * 0.4));
       }
-      case "Mil-Spec Grade":
-        return Math.round(25 + (seed * 0.12));
-      case "Industrial Grade":
-        return Math.round(8 + (seed * 0.04));
-      case "Consumer Grade":
-        return Math.round(2 + (seed * 0.02));
-      default:
-        return Math.round(50 + (seed * 0.2));
+      case "Mil-Spec Grade": return Math.round(25 + (seed * 0.12));
+      case "Industrial Grade": return Math.round(8 + (seed * 0.04));
+      case "Consumer Grade": return Math.round(2 + (seed * 0.02));
+      default: return Math.round(50 + (seed * 0.2));
     }
   }
 
@@ -156,11 +135,7 @@ async function main() {
     } else if (catName === "Gloves" || s.weapon?.name?.includes("Gloves") || s.weapon?.name?.includes("Wraps")) {
       catKey = "gloves";
     } else if (catName === "Rifles") {
-      if (s.weapon?.name === "AWP" || s.weapon?.name === "SSG 08") {
-        catKey = "snipers";
-      } else {
-        catKey = "rifles";
-      }
+      catKey = (s.weapon?.name === "AWP" || s.weapon?.name === "SSG 08") ? "snipers" : "rifles";
     } else if (catName === "Pistols") {
       catKey = "pistols";
     } else if (catName === "SMGs") {
@@ -169,9 +144,6 @@ async function main() {
       catKey = "heavy";
     }
 
-    const price = getSkinPrice(s);
-    const rarityUk = getRarityUk(s.rarity?.name);
-
     cleaned.push({
       id: s.id,
       name: s.pattern?.name || s.name,
@@ -179,34 +151,18 @@ async function main() {
       fullName: s.name,
       category: catKey,
       rarity: s.rarity?.name || "Common",
-      rarityUk,
+      rarityUk: getRarityUk(s.rarity?.name),
       rarityColor: s.rarity?.color || "#eb4b4b",
-      price,
+      price: getSkinPrice(s),
       image: s.image,
       minFloat: s.min_float ?? 0.0,
       maxFloat: s.max_float ?? 1.0,
     });
   }
 
-  const publicDataDir = path.resolve(process.cwd(), "public", "data");
-  if (!fs.existsSync(publicDataDir)) {
-    fs.mkdirSync(publicDataDir, { recursive: true });
-  }
-
-  const outFilePath = path.join(publicDataDir, "cs2-market.json");
+  const outFilePath = path.join(process.cwd(), "public", "data", "cs2-market.json");
   fs.writeFileSync(outFilePath, JSON.stringify(cleaned), "utf8");
-  console.log(`✓ Записано ${cleaned.length} скінів у ${outFilePath} (Розмір: ${(fs.statSync(outFilePath).size / 1024).toFixed(1)} KB)`);
-
-  const libDataDir = path.resolve(process.cwd(), "lib", "data");
-  if (!fs.existsSync(libDataDir)) {
-    fs.mkdirSync(libDataDir, { recursive: true });
-  }
-  const sampleFilePath = path.join(libDataDir, "market-sample.json");
-  fs.writeFileSync(sampleFilePath, JSON.stringify(cleaned.slice(0, 60)), "utf8");
-  console.log(`✓ Записано вибірку з 60 скінів у ${sampleFilePath}`);
+  console.log(`✓ Оновлено ${cleaned.length} скінів у public/data/cs2-market.json!`);
 }
 
-main().catch(err => {
-  console.error("Помилка генерації ринку:", err);
-  process.exit(1);
-});
+main().catch(console.error);
