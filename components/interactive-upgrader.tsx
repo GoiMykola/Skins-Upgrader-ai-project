@@ -72,12 +72,12 @@ export function InteractiveUpgrader() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [muted, setMuted] = useState(false);
 
-  // Модалка вибору з ринку
   const [marketSkins, setMarketSkins] = useState<MarketSkin[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [pickerSlot, setPickerSlot] = useState<"source" | "target">("target");
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerCategory, setPickerCategory] = useState("all");
+  const [onlyValidUpgrades, setOnlyValidUpgrades] = useState(true);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const crawlIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -127,9 +127,12 @@ export function InteractiveUpgrader() {
     };
   }, []);
 
-  const rawChance = (sourceSkin.price / targetSkin.price) * 100 * 0.95;
-  const chance = Math.min(95, Math.max(0.5, Math.round(rawChance * 10) / 10));
+  // 1. ЕКОНОМІКА: Перевірка на даунгрейд
+  const isDowngrade = targetSkin.price <= sourceSkin.price;
   const multiplier = Math.round((targetSkin.price / sourceSkin.price) * 100) / 100;
+  
+  const rawChance = isDowngrade ? 0 : (sourceSkin.price / targetSkin.price) * 100 * 0.95;
+  const chance = isDowngrade ? 0 : Math.min(95, Math.max(0.5, Math.round(rawChance * 10) / 10));
   
   const winAngle = (chance / 100) * 360;
   const circleCircumference = 270.2;
@@ -144,10 +147,29 @@ export function InteractiveUpgrader() {
   const handleMultiplierSelect = (mult: number) => {
     playClickSound();
     const targetPrice = sourceSkin.price * mult;
-    const bestMatch = skins.reduce((prev, curr) =>
+    const pool = marketSkins.length > 0 ? marketSkins.map(marketSkinToSkin) : skins;
+    const validPool = pool.filter((s) => s.price >= sourceSkin.price * 1.05);
+    const searchPool = validPool.length > 0 ? validPool : pool;
+    const bestMatch = searchPool.reduce((prev, curr) =>
       Math.abs(curr.price - targetPrice) < Math.abs(prev.price - targetPrice) ? curr : prev
     );
     setTargetSkin(bestMatch);
+  };
+
+  const handleSelectSource = (s: Skin) => {
+    playClickSound();
+    setSourceSkin(s);
+    if (targetSkin.price <= s.price) {
+      const pool = marketSkins.length > 0 ? marketSkins.map(marketSkinToSkin) : skins;
+      const candidates = pool.filter((item) => item.price >= s.price * 1.2);
+      if (candidates.length > 0) {
+        const idealPrice = s.price * 1.5;
+        const best = candidates.reduce((prev, curr) =>
+          Math.abs(curr.price - idealPrice) < Math.abs(prev.price - idealPrice) ? curr : prev
+        );
+        setTargetSkin(best);
+      }
+    }
   };
 
   const openMarketPicker = (slot: "source" | "target") => {
@@ -155,6 +177,7 @@ export function InteractiveUpgrader() {
     setPickerSlot(slot);
     setPickerSearch("");
     setPickerCategory("all");
+    setOnlyValidUpgrades(slot === "target");
     setIsPickerOpen(true);
   };
 
@@ -164,13 +187,16 @@ export function InteractiveUpgrader() {
     if (pickerSlot === "target") {
       setTargetSkin(converted);
     } else {
-      setSourceSkin(converted);
+      handleSelectSource(converted);
     }
     setIsPickerOpen(false);
   };
 
   const filteredPickerSkins = useMemo(() => {
     return marketSkins.filter((s) => {
+      if (pickerSlot === "target" && onlyValidUpgrades && s.price <= sourceSkin.price) {
+        return false;
+      }
       if (pickerSearch.trim()) {
         const q = pickerSearch.toLowerCase().trim();
         if (!s.fullName.toLowerCase().includes(q) && !s.weapon.toLowerCase().includes(q)) return false;
@@ -182,10 +208,10 @@ export function InteractiveUpgrader() {
       }
       return true;
     }).slice(0, 48);
-  }, [marketSkins, pickerSearch, pickerCategory]);
+  }, [marketSkins, pickerSearch, pickerCategory, pickerSlot, onlyValidUpgrades, sourceSkin.price]);
 
   const handleUpgrade = () => {
-    if (isSpinning) return;
+    if (isSpinning || isDowngrade) return;
     playClickSound();
     setIsSpinning(true);
     setOutcome(null);
@@ -290,7 +316,7 @@ export function InteractiveUpgrader() {
       {/* Верхній статус бар */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.06] pb-4">
         <div className="flex items-center gap-2.5">
-          <span className="size-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_#f59e0b]" />
+          <span className="size-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_#10b981]" />
           <h2 className="text-sm font-black uppercase tracking-wider text-white">
             CS2 UPGRADER ARENA · РУЛЕТКА
           </h2>
@@ -313,7 +339,7 @@ export function InteractiveUpgrader() {
                 title={cfg.description}
                 className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
                   isActive
-                    ? "bg-gradient-to-r from-amber-400 to-orange-500 text-[#1a1104] shadow-md shadow-orange-500/20"
+                    ? "bg-emerald-500 text-[#05130d] shadow-md shadow-emerald-500/20 font-black"
                     : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -334,14 +360,14 @@ export function InteractiveUpgrader() {
 
       {/* 3-Колонкова арена */}
       <div className="mt-8 grid grid-cols-1 items-center gap-6 lg:grid-cols-[1fr_auto_1fr]">
-        {/* ЛІВА КОЛОНКА (Твій скін / Що апгрейдимо) */}
+        {/* ЛІВА КОЛОНКА (Твій скін) */}
         <div className="w-full max-w-[340px] justify-self-center lg:justify-self-end flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-black/40 p-4">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Твій скін (для апгрейду)
               </span>
-              <span className="font-mono text-xs font-bold text-amber-300">
+              <span className="font-mono text-xs font-bold text-emerald-400">
                 {formatCoins(sourceSkin.price)} GC
               </span>
             </div>
@@ -361,7 +387,7 @@ export function InteractiveUpgrader() {
               </span>
               <button
                 onClick={() => openMarketPicker("source")}
-                className="text-[10px] font-bold text-amber-400 hover:text-amber-300 underline"
+                className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 underline"
               >
                 З Ринку 🛒
               </button>
@@ -370,13 +396,10 @@ export function InteractiveUpgrader() {
               {userInventory.map((s) => (
                 <button
                   key={`user-inv-item-${s.instanceId}`}
-                  onClick={() => {
-                    playClickSound();
-                    setSourceSkin(s);
-                  }}
+                  onClick={() => handleSelectSource(s)}
                   className={`shrink-0 rounded-lg border px-2 py-1 text-[11px] font-semibold transition ${
                     sourceSkin.finish === s.finish
-                      ? "border-amber-400 bg-amber-400/20 text-amber-200"
+                      ? "border-emerald-400 bg-emerald-400/20 text-emerald-200"
                       : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"
                   }`}
                 >
@@ -387,7 +410,7 @@ export function InteractiveUpgrader() {
           </div>
         </div>
 
-        {/* ЦЕНТРАЛЬНА КОЛОНКА: КОЛЕСО ПО ЦЕНТРУ */}
+        {/* ЦЕНТРАЛЬНА КОЛОНКА: СМАРАГДОВЕ КОЛЕСО ПО ЦЕНТРУ */}
         <div className="flex flex-col items-center justify-center justify-self-center px-2">
           <div className="relative flex size-80 items-center justify-center sm:size-92">
             <svg className="size-full -rotate-90 transform" viewBox="0 0 100 100">
@@ -399,19 +422,21 @@ export function InteractiveUpgrader() {
                 strokeWidth="6"
                 fill="transparent"
               />
-              <circle
-                cx="50"
-                cy="50"
-                r="43"
-                className="stroke-emerald-400 transition-all duration-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.55)]"
-                strokeWidth="6"
-                strokeDasharray={`${winStrokeDash} ${circleCircumference}`}
-                strokeLinecap="butt"
-                fill="transparent"
-              />
+              {!isDowngrade && (
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="43"
+                  className="stroke-emerald-400 transition-all duration-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.55)]"
+                  strokeWidth="6"
+                  strokeDasharray={`${winStrokeDash} ${circleCircumference}`}
+                  strokeLinecap="butt"
+                  fill="transparent"
+                />
+              )}
             </svg>
 
-            {/* Стрілка: Золотий лазерний шеврон */}
+            {/* Стрілка: Смарагдовий лазерний шеврон */}
             <div
               className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center will-change-transform"
               style={{
@@ -420,26 +445,42 @@ export function InteractiveUpgrader() {
               }}
             >
               <div className="absolute top-2.5 flex flex-col items-center">
-                <div className="h-4 w-1 bg-gradient-to-t from-amber-400 to-transparent shadow-[0_0_8px_#f59e0b]" />
-                <div className="size-0 border-x-[7px] border-t-[12px] border-x-transparent border-t-amber-400 drop-shadow-[0_0_10px_#f59e0b]" />
-                <div className="size-1.5 -mt-1 rounded-full bg-white shadow-[0_0_6px_#fff]" />
+                <div className="h-4 w-1 bg-gradient-to-t from-emerald-400 to-transparent shadow-[0_0_8px_#34d399]" />
+                <div className="size-0 border-x-[7px] border-t-[12px] border-x-transparent border-t-emerald-400 drop-shadow-[0_0_10px_#34d399]" />
+                <div className="size-1.5 -mt-1 rounded-full bg-white shadow-[0_0_6px_#34d399]" />
               </div>
             </div>
 
-            {/* Центр рулетки */}
-            <div className="absolute flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                ШАНС АПГРЕЙДУ
-              </span>
-              <span className="font-mono text-3xl font-black text-white sm:text-4xl">
-                {chance}%
-              </span>
-              <span className="mt-1 rounded-full bg-white/5 px-2.5 py-0.5 font-mono text-xs font-bold text-amber-300 border border-white/5">
-                ×{multiplier}
-              </span>
-              <span className="mt-1 text-[10px] text-slate-500 font-medium">
-                Режим: {currentConfig.label}
-              </span>
+            {/* Центр рулетки з блокуванням при даунгрейді */}
+            <div className="absolute flex flex-col items-center justify-center text-center max-w-[200px]">
+              {isDowngrade ? (
+                <div className="flex flex-col items-center">
+                  <span className="text-xs font-black uppercase tracking-wider text-rose-400">
+                    ⚠️ ДАУНГРЕЙД
+                  </span>
+                  <span className="mt-1 text-[11px] font-bold text-slate-300">
+                    Ціль дешевша за скін!
+                  </span>
+                  <span className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                    Обери від {formatCoins(Math.round(sourceSkin.price * 1.1))} GC
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    ШАНС АПГРЕЙДУ
+                  </span>
+                  <span className="font-mono text-3xl font-black text-white sm:text-4xl">
+                    {chance}%
+                  </span>
+                  <span className="mt-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-300">
+                    ×{multiplier}
+                  </span>
+                  <span className="mt-1 text-[10px] text-slate-500 font-medium">
+                    Режим: {currentConfig.label}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
@@ -450,7 +491,7 @@ export function InteractiveUpgrader() {
                 key={`mult-btn-${m}`}
                 onClick={() => handleMultiplierSelect(m)}
                 disabled={isSpinning}
-                className="rounded-lg px-2.5 py-1 font-mono text-xs font-bold text-slate-400 transition hover:bg-white/10 hover:text-amber-300 disabled:opacity-40"
+                className="rounded-lg px-2.5 py-1 font-mono text-xs font-bold text-slate-400 transition hover:bg-emerald-500/10 hover:text-emerald-300 disabled:opacity-40"
               >
                 {m}×
               </button>
@@ -465,7 +506,7 @@ export function InteractiveUpgrader() {
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Бажаний скін (ціль)
               </span>
-              <span className="font-mono text-xs font-bold text-amber-300">
+              <span className={`font-mono text-xs font-bold ${isDowngrade ? "text-rose-400" : "text-emerald-400"}`}>
                 {formatCoins(targetSkin.price)} GC
               </span>
             </div>
@@ -485,7 +526,7 @@ export function InteractiveUpgrader() {
               </span>
               <button
                 onClick={() => openMarketPicker("target")}
-                className="text-[10px] font-bold text-amber-400 hover:text-amber-300 underline"
+                className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 underline"
               >
                 Обрати з Ринку (2.2к) 🔍
               </button>
@@ -500,7 +541,7 @@ export function InteractiveUpgrader() {
                   }}
                   className={`shrink-0 rounded-lg border px-2 py-1 text-[11px] font-semibold transition ${
                     targetSkin.finish === s.finish
-                      ? "border-violet-400 bg-violet-400/20 text-violet-200"
+                      ? "border-emerald-400 bg-emerald-400/20 text-emerald-200"
                       : "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10"
                   }`}
                 >
@@ -512,18 +553,24 @@ export function InteractiveUpgrader() {
         </div>
       </div>
 
-      {/* Кнопка запуску апгрейду */}
+      {/* Кнопка запуску апгрейду: Смарагдовий монохромний колір + блокування при даунгрейді */}
       <div className="mt-8 flex justify-center">
         <button
           onClick={handleUpgrade}
-          disabled={isSpinning}
+          disabled={isSpinning || isDowngrade}
           className={`w-full max-w-lg rounded-2xl py-4 text-base font-black uppercase tracking-wider transition shadow-xl ${
             isSpinning
-              ? "cursor-not-allowed bg-slate-700 text-slate-400"
-              : "bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 text-[#1a1005] shadow-orange-500/25 hover:brightness-110 active:scale-[0.99]"
+              ? "cursor-not-allowed bg-slate-800 text-slate-500 border border-white/5"
+              : isDowngrade
+              ? "cursor-not-allowed bg-slate-800/90 text-rose-400 border border-rose-500/30 shadow-none"
+              : "bg-emerald-500 hover:bg-emerald-400 text-[#05130d] shadow-emerald-500/25 border border-emerald-400/40 active:scale-[0.99]"
           }`}
         >
-          {isSpinning ? "Крутимо рулетку..." : "АПГРЕЙДИТИ СКІН ⚡"}
+          {isSpinning
+            ? "Крутимо рулетку..."
+            : isDowngrade
+            ? "⚠️ ДАУНГРЕЙД ЗАБОРОНЕНО (ОБЕРИ ДОРОЖЧУ ЦІЛЬ)"
+            : "АПГРЕЙДИТИ СКІН ⚡"}
         </button>
       </div>
 
@@ -533,7 +580,7 @@ export function InteractiveUpgrader() {
           <div className="w-full max-w-4xl max-h-[85vh] flex flex-col rounded-3xl border border-white/10 bg-[#0e111a] p-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
                   {pickerSlot === "target" ? "🎯 ОБЕРИ БАЖАНУ ЦІЛЬ ДЛЯ АПГРЕЙДУ" : "🎒 ОБЕРИ СКІН ДЛЯ АПГРЕЙДУ"}
                 </span>
                 <h3 className="text-xl font-black text-white">Каталог скінів CS2 (2 246 скінів)</h3>
@@ -547,13 +594,27 @@ export function InteractiveUpgrader() {
             </div>
 
             <div className="my-4 space-y-3">
-              <input
-                type="text"
-                value={pickerSearch}
-                onChange={(e) => setPickerSearch(e.target.value)}
-                placeholder="Швидкий пошук: Dragon Lore, Doppler, Fade, AK-47, Printstream..."
-                className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-amber-400"
-              />
+              <div className="flex flex-col sm:flex-row gap-3 items-center">
+                <input
+                  type="text"
+                  value={pickerSearch}
+                  onChange={(e) => setPickerSearch(e.target.value)}
+                  placeholder="Швидкий пошук: Dragon Lore, Doppler, Fade, AK-47, Printstream..."
+                  className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-400"
+                />
+                {pickerSlot === "target" && (
+                  <label className="flex items-center gap-2 shrink-0 text-xs font-bold text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={onlyValidUpgrades}
+                      onChange={(e) => setOnlyValidUpgrades(e.target.checked)}
+                      className="size-4 rounded accent-emerald-500"
+                    />
+                    <span>Тільки дорожчі за твій скін ({formatCoins(sourceSkin.price)} GC)</span>
+                  </label>
+                )}
+              </div>
+
               <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
                 {[
                   { id: "all", label: "Всі" },
@@ -573,7 +634,7 @@ export function InteractiveUpgrader() {
                     }}
                     className={`rounded-lg px-3 py-1 text-xs font-bold transition ${
                       pickerCategory === c.id
-                        ? "bg-amber-400 text-[#1a1005]"
+                        ? "bg-emerald-500 text-[#05130d] font-black"
                         : "border border-white/5 bg-white/5 text-slate-400 hover:text-white"
                     }`}
                   >
@@ -588,7 +649,7 @@ export function InteractiveUpgrader() {
                 <button
                   key={`picker-skin-${item.id}`}
                   onClick={() => handleSelectFromPicker(item)}
-                  className="group relative flex flex-col justify-between rounded-xl border border-white/10 bg-[#080a10] p-3 text-left transition hover:border-amber-400 hover:bg-amber-400/5 hover:-translate-y-0.5"
+                  className="group relative flex flex-col justify-between rounded-xl border border-white/10 bg-[#080a10] p-3 text-left transition hover:border-emerald-400 hover:bg-emerald-400/5 hover:-translate-y-0.5"
                 >
                   <div
                     className="relative flex h-24 items-center justify-center overflow-hidden rounded-lg bg-black/40"
@@ -612,7 +673,7 @@ export function InteractiveUpgrader() {
                   <div className="mt-2">
                     <p className="text-[10px] font-bold text-slate-500 uppercase truncate">{item.weapon}</p>
                     <p className="text-xs font-bold text-white truncate">{item.name}</p>
-                    <p className="font-mono text-xs font-black text-amber-300 mt-1">
+                    <p className="font-mono text-xs font-black text-emerald-400 mt-1">
                       {formatCoins(item.price)} GC
                     </p>
                   </div>
@@ -658,7 +719,7 @@ export function InteractiveUpgrader() {
                   playClickSound();
                   setShowResultModal(false);
                 }}
-                className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-3 text-sm font-black text-[#1a1104] shadow-md hover:brightness-110 transition"
+                className="w-full rounded-xl bg-emerald-500 hover:bg-emerald-400 py-3 text-sm font-black text-[#05130d] shadow-lg shadow-emerald-500/20 transition"
               >
                 Продовжити апгрейд ⚡
               </button>
