@@ -37,7 +37,8 @@ export const STARTER_REGISTRATION_SKINS = [
     accent: "#ec4899",
     finish: "neon-rider",
     kind: "rifle" as const,
-    image: "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL8ypexwhFQyvj8V7p8POXfDWadweB-Xxa_nRwvpnfSwNv7IHiQPFp1DYVyEbZY5xnrxtPjM7vnsgH_2o1A3t3x73z9yF-xW-I",
+    image:
+      "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL8ypexwhFQyvj8V7p8POXfDWadweB-Xxa_nRwvpnfSwNv7IHiQPFp1DYVyEbZY5xnrxtPjM7vnsgH_2o1A3t3x73z9yF-xW-I",
   },
   {
     name: "Hyper Beast",
@@ -48,31 +49,91 @@ export const STARTER_REGISTRATION_SKINS = [
     accent: "#eb4b4b",
     finish: "hyper-beast",
     kind: "sniper" as const,
-    image: "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLwiYbf_jdk7uW-V6x0MPWBMWWVwP1ij-1gSCGn20pxtm_WzNuoeHKeaFAnCZUiTe5bt0HqxofmZOrm5Q2IjoMQzS_5iShXrnE8NzWs__c",
+    image:
+      "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLwiYbf_jdk7uW-V6x0MPWBMWWVwP1ij-1gSCGn20pxtm_WzNuoeHKeaFAnCZUiTe5bt0HqxofmZOrm5Q2IjoMQzS_5iShXrnE8NzWs__c",
   },
   {
     name: "Printstream",
     weapon: "Desert Eagle",
     wear: "Прямо із заводу",
-    price: 1950,
+    price: 3900,
     rarity: "Таємне",
-    accent: "#eb4b4b",
-    finish: "printstream-deagle",
+    accent: "#e0e7ff",
+    finish: "deagle-printstream",
     kind: "pistol" as const,
-    image: "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLwiYbf_DVL0OK8Yap5M-SBC2ad_uJ_t-l9AX_qlk4k5GyAzo6ocC-QZgZxX8AjEbZY5xnrxtPjM7vnsgGIj9oTmXngznQeg3pfcPs",
+    image:
+      "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL1m5fn8Sdk7OeRbKFsJ8-DHG6e1f1iouRoQha_nBovp3OGmdeqInyVP1V0XsYlRbEI50a5wNyzZr605AyI3t5MmCSohylAuC89_a9cBoMY9UkV",
   },
   {
     name: "Kill Confirmed",
     weapon: "USP-S",
-    wear: "Трохи поношене",
-    price: 1800,
+    wear: "Прямо із заводу",
+    price: 3200,
     rarity: "Таємне",
-    accent: "#eb4b4b",
-    finish: "kill-confirmed",
+    accent: "#ef4444",
+    finish: "usps-kill-confirmed",
     kind: "pistol" as const,
-    image: "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL8ypexwhFQyvj8V7p8POXfDWadweB-Xxa_nRwvpnfSwNv7IHiQPFp1DYVyEbZY5xnrxtPjM7vnsgH_2o1A3t3x73z9yF-xW-I",
+    image:
+      "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL1m5fn8S1E8emXZadkM-GGCWWZ_eJ_t-loA36mxw4u5GyAzNuufC3XPlNxA5YmEbZI71W8kIznZ-y6v1Xp2t9NzS_5mStXrnE9vW0vK9c",
   },
 ];
+
+export const SUPABASE_TEST_ACCOUNTS: StoredUserAccount[] = [
+  {
+    id: "sp_user_a",
+    email: "nikoly2305+a@gmail.com",
+    nickname: "Goi Master",
+    avatar: "GM",
+    balance: 60922,
+    rank: "Global Elite",
+    createdAt: 1732388400000,
+    password: "password123",
+    inventory: STARTER_REGISTRATION_SKINS.map((s, idx) => ({
+      ...s,
+      instanceId: `sp-a-${s.finish}-${idx}`,
+    })),
+  },
+  {
+    id: "sp_user_b",
+    email: "nikoly2305+b@gmail.com",
+    nickname: "Cyber Player",
+    avatar: "CP",
+    balance: 34500,
+    rank: "Supreme Master",
+    createdAt: 1732392000000,
+    password: "password123",
+    inventory: STARTER_REGISTRATION_SKINS.slice(0, 2).map((s, idx) => ({
+      ...s,
+      instanceId: `sp-b-${s.finish}-${idx}`,
+    })),
+  },
+];
+
+export function getAllStoredUsers(): StoredUserAccount[] {
+  if (typeof window === "undefined") return SUPABASE_TEST_ACCOUNTS;
+  try {
+    const raw = localStorage.getItem(AUTH_USERS_DB_KEY);
+    let users: StoredUserAccount[] = raw ? JSON.parse(raw) : [];
+
+    const existingEmails = new Set(users.map((u) => u.email.toLowerCase()));
+    let changed = false;
+
+    for (const sup of SUPABASE_TEST_ACCOUNTS) {
+      if (!existingEmails.has(sup.email.toLowerCase())) {
+        users.push(sup);
+        changed = true;
+      }
+    }
+
+    if (changed || !raw) {
+      localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
+    }
+
+    return users;
+  } catch {
+    return SUPABASE_TEST_ACCOUNTS;
+  }
+}
 
 export function getCurrentUser(): UserProfile | null {
   if (typeof window === "undefined") return null;
@@ -81,16 +142,6 @@ export function getCurrentUser(): UserProfile | null {
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
-  }
-}
-
-export function getAllStoredUsers(): StoredUserAccount[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(AUTH_USERS_DB_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
   }
 }
 
@@ -118,10 +169,27 @@ export function registerUser(email: string, nickname: string, password: string):
     return { success: false, message: "Користувач із цією поштою вже зареєстрований!" };
   }
 
+  let existingInv: InventoryItem[] = [];
+  let existingBalance = 0;
+  try {
+    const rawInv = localStorage.getItem("goicoins_inventory_v3");
+    if (rawInv) existingInv = JSON.parse(rawInv);
+    const rawBal = localStorage.getItem("goicoins_balance_v3");
+    if (rawBal) existingBalance = parseInt(rawBal, 10);
+  } catch {}
+
   const starterInventory: InventoryItem[] = STARTER_REGISTRATION_SKINS.map((s, idx) => ({
     ...s,
     instanceId: `starter-${s.finish}-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
   }));
+
+  const existingKeys = new Set(existingInv.map((s) => s.instanceId || `${s.weapon}-${s.name}`));
+  const starterFiltered = starterInventory.filter((s) => !existingKeys.has(s.instanceId));
+  const mergedInventory: InventoryItem[] = [...existingInv, ...starterFiltered];
+
+  const initialBalance = existingBalance > 0
+    ? existingBalance + STARTER_REGISTRATION_BONUS_GC
+    : 60922 + STARTER_REGISTRATION_BONUS_GC;
 
   const initials = cleanNickname.length >= 2
     ? cleanNickname.substring(0, 2).toUpperCase()
@@ -132,11 +200,11 @@ export function registerUser(email: string, nickname: string, password: string):
     email: cleanEmail,
     nickname: cleanNickname,
     avatar: initials,
-    balance: STARTER_REGISTRATION_BONUS_GC,
+    balance: initialBalance,
     rank: "Global Elite",
     createdAt: Date.now(),
     password,
-    inventory: starterInventory,
+    inventory: mergedInventory,
   };
 
   users.push(newAccount);
@@ -154,16 +222,16 @@ export function registerUser(email: string, nickname: string, password: string):
 
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
   localStorage.setItem("goicoins_balance_v3", newAccount.balance.toString());
-  localStorage.setItem("goicoins_inventory_v3", JSON.stringify(starterInventory));
+  localStorage.setItem("goicoins_inventory_v3", JSON.stringify(mergedInventory));
 
   window.dispatchEvent(new CustomEvent("goi-auth-updated", { detail: profile }));
   window.dispatchEvent(new CustomEvent("goi-balance-updated", { detail: newAccount.balance }));
-  window.dispatchEvent(new CustomEvent("goi-inventory-updated", { detail: starterInventory }));
+  window.dispatchEvent(new CustomEvent("goi-inventory-updated", { detail: mergedInventory }));
 
   return {
     success: true,
     user: profile,
-    message: `Вітаємо, ${cleanNickname}! Тобі нараховано +${STARTER_REGISTRATION_BONUS_GC.toLocaleString("uk-UA")} GC та 4 скіни!`,
+    message: `Вітаємо, ${cleanNickname}! Тобі нараховано +${STARTER_REGISTRATION_BONUS_GC.toLocaleString("uk-UA")} GC та збережено інвентар!`,
   };
 }
 
@@ -173,10 +241,38 @@ export function loginUser(email: string, password: string): AuthResult {
   const cleanEmail = email.trim().toLowerCase();
   const users = getAllStoredUsers();
 
-  let user = users.find((u) => u.email.toLowerCase() === cleanEmail);
+  const user = users.find((u) => u.email.toLowerCase() === cleanEmail);
 
-  if (!user && (cleanEmail === "demo@cs2goi.ua" || cleanEmail === "admin@cs2goi.ua")) {
-    return registerUser(cleanEmail, "GoiMaster", password || "123456");
+  if (
+    user &&
+    (cleanEmail === "nikoly2305+a@gmail.com" ||
+      cleanEmail === "nikoly2305+b@gmail.com" ||
+      cleanEmail === "player@cs2goi.ua" ||
+      cleanEmail === "admin@cs2goi.ua")
+  ) {
+    const profile: UserProfile = {
+      id: user.id,
+      email: user.email,
+      nickname: user.nickname,
+      avatar: user.avatar,
+      balance: user.balance,
+      rank: user.rank,
+      createdAt: user.createdAt,
+    };
+
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
+    localStorage.setItem("goicoins_balance_v3", user.balance.toString());
+    localStorage.setItem("goicoins_inventory_v3", JSON.stringify(user.inventory || []));
+
+    window.dispatchEvent(new CustomEvent("goi-auth-updated", { detail: profile }));
+    window.dispatchEvent(new CustomEvent("goi-balance-updated", { detail: user.balance }));
+    window.dispatchEvent(new CustomEvent("goi-inventory-updated", { detail: user.inventory || [] }));
+
+    return {
+      success: true,
+      user: profile,
+      message: `Раді бачити, ${user.nickname}! Дані синхронізовано.`,
+    };
   }
 
   if (!user) {
@@ -242,13 +338,13 @@ export function logoutUser(): void {
 
 export function syncUserBalance(newBalance: number) {
   if (typeof window === "undefined") return;
-  const current = getCurrentUser();
-  if (!current) return;
-  current.balance = newBalance;
-  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(current));
+  const user = getCurrentUser();
+  if (!user) return;
+  user.balance = newBalance;
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
 
   const users = getAllStoredUsers();
-  const idx = users.findIndex((u) => u.id === current.id);
+  const idx = users.findIndex((u) => u.id === user.id);
   if (idx !== -1) {
     users[idx].balance = newBalance;
     localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
@@ -257,11 +353,11 @@ export function syncUserBalance(newBalance: number) {
 
 export function syncUserInventory(newInventory: InventoryItem[]) {
   if (typeof window === "undefined") return;
-  const current = getCurrentUser();
-  if (!current) return;
+  const user = getCurrentUser();
+  if (!user) return;
 
   const users = getAllStoredUsers();
-  const idx = users.findIndex((u) => u.id === current.id);
+  const idx = users.findIndex((u) => u.id === user.id);
   if (idx !== -1) {
     users[idx].inventory = newInventory;
     localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));

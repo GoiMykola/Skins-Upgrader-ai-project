@@ -49,7 +49,7 @@ export default function InventoryPage() {
     };
   }, []);
 
-  const totalValue = inventory.reduce((acc, s) => acc + s.price, 0);
+  const totalValue = inventory.reduce((acc, s) => acc + (s.price || 0), 0);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -106,6 +106,7 @@ export default function InventoryPage() {
         </div>
       )}
 
+      {/* Верхня панель профілю */}
       <div className="mb-6 overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0e111a] p-6 sm:p-8 shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -115,7 +116,7 @@ export default function InventoryPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-black text-white">
-                  Гравець {user?.nickname || "Гість (demo-player)"}
+                  Гравець {user?.nickname || "Гість (Goi Master)"}
                 </h1>
                 <span className="rounded-md bg-emerald-400/20 px-2 py-0.5 text-xs font-bold text-emerald-300">
                   {user?.rank || "Global Elite"}
@@ -183,6 +184,7 @@ export default function InventoryPage() {
         </div>
       )}
 
+      {/* Заголовок списку скінів */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
         <div>
           <h2 className="text-2xl font-black text-white">
@@ -197,23 +199,11 @@ export default function InventoryPage() {
           {inventory.length > 0 && (
             <button
               onClick={requestSellAll}
-              className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-black text-amber-300 hover:bg-amber-500/20 transition"
+              className="rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2 text-xs font-bold text-amber-300 transition"
             >
-              💰 Продати весь інвентар ({formatCoins(totalValue)} GC)
+              Продати весь інвентар (+{formatCoins(totalValue)} GC) 💰
             </button>
           )}
-          <Link
-            href="/topup"
-            className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 transition"
-          >
-            Поповнити баланс (+) 🪙
-          </Link>
-          <Link
-            href="/market"
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-white/10 transition"
-          >
-            Ринок скінів (2.2к) 🛒
-          </Link>
           <Link
             href="/"
             className="rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-xs font-black text-[#05130d] shadow-lg shadow-emerald-500/20 transition"
@@ -223,27 +213,20 @@ export default function InventoryPage() {
         </div>
       </div>
 
+      {/* Сітка інвентарю */}
       {inventory.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-[#0c0f17] py-20 text-center">
-          <div className="text-4xl">🎒</div>
-          <h3 className="mt-4 text-xl font-bold text-white">Твій інвентар порожній</h3>
-          <p className="mt-1 max-w-sm text-xs text-slate-400">
-            Всі скіни було продано або програно в рулетці. Відвідай Ринок, поповни баланс або отримай щоденний бонус!
+        <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-[#0d1018]/50 p-12 text-center">
+          <div className="text-6xl mb-4">🎒</div>
+          <h3 className="text-xl font-bold text-white">Твій інвентар порожній</h3>
+          <p className="text-sm text-slate-400 max-w-md mt-1 mb-6">
+            Купуй скіни на CS2 Ринку або скористайся щоденними бонусами на сторінці поповнення!
           </p>
-          <div className="mt-6 flex flex-wrap gap-3 justify-center">
-            <Link
-              href="/topup"
-              className="rounded-xl bg-emerald-500 hover:bg-emerald-400 px-6 py-2.5 text-xs font-black text-[#05130d] shadow-lg transition"
-            >
-              Отримати монети (+) 🪙
-            </Link>
-            <Link
-              href="/market"
-              className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-6 py-2.5 text-xs font-bold text-slate-300 transition"
-            >
-              Перейти на Ринок CS2 →
-            </Link>
-          </div>
+          <Link
+            href="/market"
+            className="rounded-xl bg-emerald-500 hover:bg-emerald-400 px-6 py-2.5 text-xs font-black text-[#05130d] transition shadow-lg shadow-emerald-500/20"
+          >
+            Перейти на Ринок CS2 →
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
@@ -255,7 +238,7 @@ export default function InventoryPage() {
               <div className="flex items-center justify-between text-[10px]">
                 <span
                   className="rounded px-1.5 py-0.5 font-bold uppercase tracking-wider"
-                  style={{ backgroundColor: `${item.accent}20`, color: item.accent }}
+                  style={{ backgroundColor: `${item.accent || "#eb4b4b"}20`, color: item.accent || "#eb4b4b" }}
                 >
                   {item.rarity}
                 </span>
@@ -267,14 +250,10 @@ export default function InventoryPage() {
               <div className="relative my-3 flex aspect-video items-center justify-center">
                 <div
                   className="absolute inset-0 opacity-20 blur-xl transition group-hover:opacity-40"
-                  style={{ backgroundColor: item.accent }}
+                  style={{ backgroundColor: item.accent || "#eb4b4b" }}
                 />
                 <SkinArt
-                  image={item.image}
-                  name={item.name}
-                  weapon={item.weapon}
-                  accent={item.accent}
-                  finish={item.finish}
+                  skin={item}
                   className="h-24 w-full object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
@@ -308,6 +287,7 @@ export default function InventoryPage() {
         </div>
       )}
 
+      {/* Модалка підтвердження продажу окремого скіна */}
       {skinToSell && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-amber-500/30 bg-[#0d1018]/95 p-6 sm:p-7 shadow-[0_0_50px_rgba(245,158,11,0.18)]">
@@ -325,14 +305,10 @@ export default function InventoryPage() {
               <div className="relative mx-auto flex h-24 w-full items-center justify-center">
                 <div
                   className="absolute inset-0 opacity-20 blur-xl"
-                  style={{ backgroundColor: skinToSell.accent }}
+                  style={{ backgroundColor: skinToSell.accent || "#eb4b4b" }}
                 />
                 <SkinArt
-                  image={skinToSell.image}
-                  name={skinToSell.name}
-                  weapon={skinToSell.weapon}
-                  accent={skinToSell.accent}
-                  finish={skinToSell.finish}
+                  skin={skinToSell}
                   className="h-20 w-full object-contain drop-shadow-lg"
                 />
               </div>
@@ -341,90 +317,75 @@ export default function InventoryPage() {
               <div className="mt-1 flex items-center justify-center gap-2 text-[11px]">
                 <span
                   className="rounded px-1.5 py-0.5 font-bold uppercase"
-                  style={{ backgroundColor: `${skinToSell.accent}20`, color: skinToSell.accent }}
+                  style={{ backgroundColor: `${skinToSell.accent || "#eb4b4b"}20`, color: skinToSell.accent || "#eb4b4b" }}
                 >
                   {skinToSell.rarity}
                 </span>
                 <span className="text-slate-500">·</span>
                 <span className="text-slate-400">{skinToSell.wear}</span>
               </div>
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 font-mono text-xs font-black text-emerald-300">
-                <span>Ви отримаєте:</span>
-                <span className="text-emerald-400 font-bold">+{formatCoins(skinToSell.price)} GC</span>
+              <div className="mt-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-2">
+                <span className="text-[10px] font-bold text-emerald-300 uppercase">Отримаєш: </span>
+                <span className="text-base font-black text-emerald-400 font-mono">
+                  +{formatCoins(skinToSell.price)} GC
+                </span>
               </div>
             </div>
 
-            <p className="mt-4 text-center text-[11px] text-slate-400 leading-relaxed">
-              Ця дія є остаточною. Скін буде вилучено з твого інвентаря, а монети зараховано на баланс.
-            </p>
-
-            <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="mt-6 flex gap-3">
               <button
-                onClick={() => {
-                  playClickSound();
-                  setSkinToSell(null);
-                }}
-                className="rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold text-slate-300 hover:bg-white/10 hover:text-white transition"
+                onClick={() => setSkinToSell(null)}
+                className="flex-1 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold text-slate-300 hover:bg-white/10 hover:text-white transition"
               >
                 Скасувати
               </button>
               <button
                 onClick={executeSellSkin}
-                className="rounded-xl bg-amber-500 hover:bg-amber-400 py-2.5 text-xs font-black text-[#05130d] shadow-lg shadow-amber-500/20 transition"
+                className="flex-1 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-2.5 text-xs font-black text-[#1a1104] shadow-lg shadow-amber-500/20 hover:brightness-110 transition"
               >
-                Продати (+{formatCoins(skinToSell.price)} GC) 💰
+                Підтвердити продаж 💰
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Модалка підтвердження продажу ВСЬОГО інвентаря */}
       {confirmSellAll && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-rose-500/30 bg-[#0d1018]/95 p-6 sm:p-7 shadow-[0_0_50px_rgba(244,63,94,0.18)]">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-rose-500/40 bg-[#0d1018]/95 p-6 sm:p-7 shadow-[0_0_50px_rgba(244,63,94,0.2)]">
             <div className="text-center">
-              <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-rose-500/20 text-2xl">
-                💥
+              <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-rose-500/20 text-2xl text-rose-400">
+                🚨
               </div>
               <h3 className="mt-3 text-xl font-black text-white">Продати весь інвентар?</h3>
               <p className="mt-1 text-xs text-slate-400">
-                Увага! Ти збираєшся продати всі {inventory.length} скінів в один клік.
+                Ця дія безповоротно продасть <strong className="text-white">{inventory.length} скінів</strong> за повну ринкову вартість.
               </p>
             </div>
 
             <div className="mt-5 rounded-2xl border border-white/10 bg-black/40 p-4 text-center">
-              <div className="flex items-center justify-center gap-6">
-                <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-400">Кількість скінів</p>
-                  <p className="text-lg font-black text-white">{inventory.length} шт.</p>
-                </div>
-                <div className="h-8 w-px bg-white/10" />
-                <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-400">Загальна виручка</p>
-                  <p className="text-lg font-black text-emerald-400">+{formatCoins(totalValue)} GC</p>
-                </div>
-              </div>
+              <p className="text-xs text-slate-400">Загальне нарахування на баланс:</p>
+              <p className="mt-1 font-mono text-2xl font-black text-emerald-400">
+                +{formatCoins(totalValue)} GC
+              </p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                Новий баланс: {(balance + totalValue).toLocaleString("uk-UA")} GC
+              </p>
             </div>
 
-            <p className="mt-4 text-center text-[11px] text-rose-300">
-              Всі скіни будуть спалені, а повна сума монет одразу зарахується на твій баланс.
-            </p>
-
-            <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="mt-6 flex gap-3">
               <button
-                onClick={() => {
-                  playClickSound();
-                  setConfirmSellAll(false);
-                }}
-                className="rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold text-slate-300 hover:bg-white/10 hover:text-white transition"
+                onClick={() => setConfirmSellAll(false)}
+                className="flex-1 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold text-slate-300 hover:bg-white/10 hover:text-white transition"
               >
                 Скасувати
               </button>
               <button
                 onClick={executeSellAll}
-                className="rounded-xl bg-rose-500 hover:bg-rose-400 py-2.5 text-xs font-black text-white shadow-lg shadow-rose-500/20 transition"
+                className="flex-1 rounded-xl bg-rose-500 hover:bg-rose-400 py-2.5 text-xs font-black text-white shadow-lg shadow-rose-500/25 transition"
               >
-                Продати все (+{formatCoins(totalValue)} GC) 💥
+                Так, продати все 💥
               </button>
             </div>
           </div>
