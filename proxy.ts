@@ -5,7 +5,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Сторінки, які відкриваються без входу.
-const PUBLIC_PATHS = ["/login", "/", "/catalog", "/leaderboard"];
+export const PUBLIC_PATHS = ["/", "/login", "/register", "/catalog", "/market", "/inventory", "/leaderboard", "/topup", "/deposit", "/api"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

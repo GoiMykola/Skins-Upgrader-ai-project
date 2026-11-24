@@ -149,7 +149,7 @@ export function InteractiveUpgrader() {
       }
     } catch {}
 
-    fetch("/data/cs2-market.json")
+    fetch("/data/cs2-market.json").then(r => r.text()).then(t => t.trim().startsWith("<") ? fetch("/api/market").then(r=>r.json()) : JSON.parse(t))
       .then((res) => res.json())
       .then((data) => setMarketSkins(data))
       .catch(() => {});

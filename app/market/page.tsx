@@ -24,16 +24,36 @@ export default function MarketPage() {
   useEffect(() => {
     setBalance(getStoredBalance());
 
-    fetch("/data/cs2-market.json")
-      .then((res) => res.json())
-      .then((data: MarketSkin[]) => {
-        setMarketSkins(data);
-        setLoading(false);
-      })
-      .catch((err) => {
+    async function loadMarket() {
+      try {
+        let text = "";
+        let res = await fetch("/data/cs2-market.json");
+        if (res.ok) {
+          text = await res.text();
+        }
+
+        // Якщо повернувся HTML (редирект) або помилка, звертаємось до API
+        if (!text || text.trim().startsWith("<")) {
+          res = await fetch("/api/market");
+          if (res.ok) {
+            text = await res.text();
+          }
+        }
+
+        if (text && !text.trim().startsWith("<")) {
+          const data = JSON.parse(text) as MarketSkin[];
+          if (Array.isArray(data) && data.length > 0) {
+            setMarketSkins(data);
+          }
+        }
+      } catch (err) {
         console.error("Помилка завантаження ринку:", err);
+      } finally {
         setLoading(false);
-      });
+      }
+    }
+
+    loadMarket();
 
     const handleBal = (e: CustomEvent<number>) => {
       if (typeof e.detail === "number") setBalance(e.detail);
@@ -137,106 +157,97 @@ export default function MarketPage() {
       {/* Верхній банер ринку Widescreen */}
       <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0c0f17] p-6 sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-6">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-300">
-              <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
-              Офіційний ринок CS2 · 2 246 скінів
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-emerald-400/20 px-2 py-0.5 text-xs font-bold text-emerald-300">
+                LIVE MARKETPLACE
+              </span>
+              <span className="text-xs text-slate-400">Понад 2 200 офіційних скінів CS2</span>
             </div>
-            <h1 className="mt-3 text-3xl font-black text-white sm:text-4xl">
-              Повний Ринок Скінів Counter-Strike 2
+            <h1 className="mt-2 text-3xl font-black text-white sm:text-4xl">
+              Ринок скінів Counter-Strike 2
             </h1>
-            <p className="mt-2 text-sm text-slate-400 sm:text-base">
-              Повний каталог скінів Counter-Strike 2 з офіційними зображеннями Steam. 
-              Курс симулятора суворо калібровано: <span className="font-bold text-emerald-400">1 грн = 1 GoiCoin (GC)</span>.
+            <p className="mt-1 text-xs text-slate-400">
+              Купуй будь-який ніж, рукавички чи снайперку за GoiCoins або вибирай як ціль для апгрейдера. Курс
+              симулятора суворо калібровано: <span className="font-bold text-emerald-400">1 грн = 1 GoiCoin (GC)</span>.
             </p>
           </div>
 
-          {/* Плашка балансу без кнопки +100 GC */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-black/40 p-5 min-w-[240px]">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Твій баланс</span>
-            <p className="font-mono text-2xl font-black text-emerald-400">
-              {balance.toLocaleString("uk-UA")} <span className="text-sm">GC</span>
-            </p>
-            <div className="flex gap-2">
-              <Link
-                href="/"
-                className="rounded-xl bg-emerald-500 hover:bg-emerald-400 px-3 py-1.5 text-xs font-black text-[#05130d] text-center flex-1 transition"
-              >
-                До Апгрейдера ⚡
-              </Link>
-              <Link
-                href="/inventory"
-                className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-white/10 text-center flex-1 transition"
-              >
-                Інвентар 🎒
-              </Link>
+          <div className="flex items-center gap-4">
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-right">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Твій баланс</p>
+              <p className="mt-0.5 font-mono text-2xl font-black text-white">
+                {formatCoins(balance)} <span className="text-sm font-bold text-emerald-400">GC</span>
+              </p>
             </div>
+            <Link
+              href="/inventory"
+              className="rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 px-5 py-3 text-xs font-bold text-slate-300 hover:text-white transition"
+            >
+              Мій інвентар 🎒
+            </Link>
           </div>
         </div>
       </div>
 
       {/* Панель фільтрів та пошуку */}
-      <div className="mt-8 space-y-4 rounded-3xl border border-white/[0.08] bg-[#0c0f17] p-6">
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="relative flex-1 w-full">
+      <div className="mt-6 rounded-3xl border border-white/[0.08] bg-[#0c0f17] p-5 shadow-lg">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative flex-1">
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Пошук скіна: AWP | Dragon Lore, AK-47, Printstream, Doppler..."
-              className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-emerald-400 transition"
+              className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none transition"
             />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => {
-                playClickSound();
-                setPriceSort(priceSort === "desc" ? "asc" : "desc");
-              }}
-              className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-bold text-white hover:border-emerald-400 transition"
+              onClick={() => setPriceSort(priceSort === "desc" ? "asc" : "desc")}
+              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 px-3.5 py-2 text-xs font-bold text-slate-300 hover:bg-white/5 transition"
             >
-              <span>Ціна:</span>
-              <span className="text-emerald-400">
-                {priceSort === "desc" ? "від дорогих ↓" : "від дешевих ↑"}
-              </span>
+              Ціна: {priceSort === "desc" ? "від дорогих ↓" : "від дешевих ↑"}
             </button>
           </div>
         </div>
 
-        {/* Категорії зброї */}
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {categories.map((cat) => (
+        {/* Категорії */}
+        <div className="mt-4 flex flex-wrap gap-1.5 border-t border-white/5 pt-4">
+          {categories.map((c) => (
             <button
-              key={`market-cat-${cat.id}`}
-              onClick={() => {
-                playClickSound();
-                setSelectedCategory(cat.id);
-              }}
-              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition shrink-0 ${
-                selectedCategory === cat.id
-                  ? "bg-emerald-500 text-[#05130d] font-black"
-                  : "border border-white/5 bg-white/5 text-slate-400 hover:text-white"
+              key={c.id}
+              onClick={() => setSelectedCategory(c.id)}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                selectedCategory === c.id
+                  ? "bg-emerald-500 text-[#05130d] shadow-md shadow-emerald-500/20"
+                  : "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
               }`}
             >
-              {cat.label}
+              {c.label}
             </button>
           ))}
         </div>
 
         {/* Рідкості */}
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+        <div className="mt-3 flex flex-wrap gap-1.5">
           {rarities.map((r) => (
             <button
-              key={`market-rarity-${r.id}`}
-              onClick={() => {
-                playClickSound();
-                setSelectedRarity(r.id);
-              }}
-              className={`rounded-xl px-3 py-1 text-xs font-semibold transition shrink-0 ${
+              key={r.id}
+              onClick={() => setSelectedRarity(r.id)}
+              className={`rounded-xl px-2.5 py-1 text-[11px] font-medium transition ${
                 selectedRarity === r.id
-                  ? "border border-emerald-400 bg-emerald-400/20 text-emerald-300"
-                  : "border border-white/5 bg-white/5 text-slate-400 hover:text-white"
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                  : "bg-white/[0.03] text-slate-400 hover:bg-white/[0.08] hover:text-slate-200"
               }`}
             >
               {r.label}
@@ -245,87 +256,82 @@ export default function MarketPage() {
         </div>
       </div>
 
-      {/* Список скінів на Widescreen сітці */}
-      <div className="mt-8">
+      {/* Список скінів */}
+      <div className="mt-6">
         <div className="mb-4 flex items-center justify-between text-xs text-slate-400">
-          <span>Знайдено: <strong className="text-white">{filteredSkins.length}</strong> скінів</span>
+          <span>
+            Знайдено: <strong className="text-white">{filteredSkins.length}</strong> скінів
+          </span>
+          {loading && <span className="text-emerald-400 animate-pulse">Завантаження бази скінів...</span>}
         </div>
 
-        {loading ? (
-          <div className="py-20 text-center">
-            <div className="inline-block size-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
-            <p className="mt-3 text-sm text-slate-400">Завантажуємо каталог 2 246 скінів CS2...</p>
-          </div>
-        ) : filteredSkins.length === 0 ? (
-          <div className="py-20 text-center">
-            <p className="text-base font-bold text-slate-400">Скінів за вашим запитом не знайдено.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {filteredSkins.map((skin, idx) => (
-              <article
-                key={`market-skin-card-${skin.id}-${idx}`}
-                className="group relative flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-[#0c0f17] p-3.5 transition hover:-translate-y-1 hover:border-emerald-400/50 hover:shadow-xl hover:shadow-black/60"
-              >
-                <div>
-                  <div
-                    className="relative flex h-32 items-center justify-center overflow-hidden rounded-xl bg-black/40"
-                    style={{
-                      backgroundImage: `radial-gradient(circle at center, ${skin.rarityColor}20, transparent 75%)`,
-                    }}
-                  >
-                    <img
-                      src={skin.image}
-                      alt={skin.fullName}
-                      className="max-h-[85%] max-w-[90%] object-contain drop-shadow transition-transform group-hover:scale-110"
-                      loading="lazy"
-                    />
-                    <span
-                      className="absolute top-1.5 right-1.5 rounded px-1.5 py-0.5 text-[8px] font-black uppercase"
-                      style={{ color: skin.rarityColor }}
-                    >
-                      {skin.rarityUk}
-                    </span>
-                  </div>
-
-                  <div className="mt-3">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase truncate">
-                      {skin.weapon}
-                    </p>
-                    <h3 className="text-xs font-bold text-white truncate">{skin.name}</h3>
-                  </div>
-                </div>
-
-                <div className="mt-4 border-t border-white/[0.06] pt-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-mono text-sm font-black text-emerald-400">
-                      {formatCoins(skin.price)} <span className="text-[10px]">GC</span>
-                    </p>
-                    <span className="text-[10px] text-slate-500">
-                      ≈ {skin.price.toLocaleString("uk-UA")} грн
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <button
-                      onClick={() => handleBuySkin(skin)}
-                      className="rounded-xl bg-emerald-500 hover:bg-emerald-400 py-1.5 text-center text-xs font-black text-[#05130d] transition"
-                    >
-                      Купити
-                    </button>
-                    <Link
-                      href="/"
-                      onClick={() => handleSelectForUpgrade(skin)}
-                      className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 py-1.5 text-center text-xs font-bold text-slate-300 transition"
-                    >
-                      Ціль ⚡
-                    </Link>
-                  </div>
-                </div>
-              </article>
-            ))}
+        {filteredSkins.length === 0 && !loading && (
+          <div className="rounded-3xl border border-white/5 bg-[#0c0f17] p-16 text-center text-slate-400">
+            <p className="text-base font-bold text-white mb-1">Скінів за вашим запитом не знайдено.</p>
+            <p className="text-xs">Спробуйте змінити фільтри категорії або пошуковий запит.</p>
           </div>
         )}
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
+          {filteredSkins.map((skin) => (
+            <div
+              key={skin.id}
+              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-[#0e111a] p-3 transition hover:-translate-y-1 hover:border-emerald-500/40 hover:shadow-xl hover:shadow-emerald-500/10"
+            >
+              <div className="flex items-center justify-between">
+                <span
+                  className="rounded-md px-1.5 py-0.5 text-[9px] font-bold"
+                  style={{
+                    backgroundColor: `${skin.rarityColor}20`,
+                    color: skin.rarityColor,
+                  }}
+                >
+                  {skin.rarityUk}
+                </span>
+                <span className="font-mono text-xs font-black text-emerald-400">
+                  {formatCoins(skin.price)} GC
+                </span>
+              </div>
+
+              <div className="my-2 flex h-28 items-center justify-center">
+                <img
+                  src={skin.image}
+                  alt={skin.fullName}
+                  loading="lazy"
+                  className="max-h-24 max-w-full object-contain transition group-hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL8ypexwhFQyvj8V7p8POXfDWadweB-Xxa_nRwvpnfSwNv7IHiQPFp1DYVyEbZY5xnrxtPjM7vnsgH_2o1A3t3x73z9yF-xW-I";
+                  }}
+                />
+              </div>
+
+              <div>
+                <p className="text-[10px] text-slate-400 truncate">{skin.weapon}</p>
+                <p className="font-bold text-white text-xs truncate" title={skin.name}>
+                  {skin.name}
+                </p>
+
+                <div className="mt-2.5 flex gap-1.5">
+                  <button
+                    onClick={() => handleBuySkin(skin)}
+                    className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 py-1.5 text-center text-[10px] font-black text-[#05130d] shadow-sm transition active:scale-95"
+                  >
+                    Купити 🛒
+                  </button>
+                  <Link
+                    href="/"
+                    onClick={() => handleSelectForUpgrade(skin)}
+                    title="Вибрати як ціль в Апгрейдері"
+                    className="flex size-7 items-center justify-center rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs text-slate-300 hover:text-white transition"
+                  >
+                    ⚡
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
