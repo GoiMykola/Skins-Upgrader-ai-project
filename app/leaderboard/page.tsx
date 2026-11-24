@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { formatCoins } from "@/app/data";
-import { getAllStoredUsers, getCurrentUser, type StoredUserAccount, type UserProfile } from "@/lib/auth-storage";
+import { getAllStoredUsers, getCurrentUser, type UserProfile } from "@/lib/auth-storage";
 import { getStoredInventory, getStoredBalance, type InventoryItem } from "@/lib/inventory-storage";
 import { playClickSound } from "@/lib/sound-fx";
 
@@ -17,6 +17,8 @@ interface LeaderboardPlayer {
   inventoryValue: number;
   balance: number;
   totalWealth: number;
+  startingCapital: number;
+  profit: number;
   isCurrentUser: boolean;
   createdAt: number;
 }
@@ -41,6 +43,19 @@ export default function LeaderboardPage() {
       const invVal = inv.reduce((sum, s) => sum + (s.price || 0), 0);
       const total = invVal + bal;
 
+      // Визначаємо початковий капітал гравця:
+      // sp_user_a: 75 022 GC, sp_user_b: 41 500 GC
+      // зареєстрований користувач: u.initialCapital або дефолт 75 000 GC
+      const startCap =
+        u.initialCapital ??
+        (u.id === "sp_user_a" || u.email?.toLowerCase().includes("+a@")
+          ? 75022
+          : u.id === "sp_user_b" || u.email?.toLowerCase().includes("+b@")
+          ? 41500
+          : 75000);
+
+      const netProfit = total - startCap;
+
       return {
         id: u.id,
         name: u.nickname || "Goi Master",
@@ -51,6 +66,8 @@ export default function LeaderboardPage() {
         inventoryValue: invVal,
         balance: bal,
         totalWealth: total,
+        startingCapital: startCap,
+        profit: netProfit,
         isCurrentUser: isCurrent,
         createdAt: u.createdAt || Date.now(),
       };
@@ -80,6 +97,7 @@ export default function LeaderboardPage() {
 
   const totalPlayers = players.length;
   const totalMarketValue = players.reduce((sum, p) => sum + p.totalWealth, 0);
+  const totalProfit = players.reduce((sum, p) => sum + p.profit, 0);
 
   const openAuthModal = () => {
     playClickSound();
@@ -103,10 +121,16 @@ export default function LeaderboardPage() {
           </p>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
           <div className="rounded-2xl border border-white/10 bg-[#0e111a] px-5 py-3 shadow-lg">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Гравців у базі</p>
             <p className="font-mono text-xl font-black text-white mt-0.5">{totalPlayers}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-[#0e111a] px-5 py-3 shadow-lg">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Сумарний профіт</p>
+            <p className={`font-mono text-xl font-black mt-0.5 ${totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+              {totalProfit >= 0 ? `+${formatCoins(totalProfit)}` : `-${formatCoins(Math.abs(totalProfit))}`} GC
+            </p>
           </div>
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 shadow-lg">
             <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Капітал рейтингу</p>
@@ -144,18 +168,19 @@ export default function LeaderboardPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-white/[0.08] bg-white/[0.02] text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                <th className="py-4 px-6 text-center w-20">Місце</th>
-                <th className="py-4 px-6">Гравець</th>
-                <th className="py-4 px-6">Ранг</th>
-                <th className="py-4 px-6 text-center">Скінів</th>
-                <th className="py-4 px-6 text-right">Вартість інвентаря</th>
-                <th className="py-4 px-6 text-right">Загальний капітал</th>
+                <th className="py-4 px-5 text-center w-20">Місце</th>
+                <th className="py-4 px-5">Гравець</th>
+                <th className="py-4 px-5">Ранг</th>
+                <th className="py-4 px-5 text-center">Скінів</th>
+                <th className="py-4 px-5 text-right">Вартість інвентаря</th>
+                <th className="py-4 px-5 text-right">Профіт / Злив</th>
+                <th className="py-4 px-5 text-right">Загальний капітал</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.06] text-sm">
               {players.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-500 text-sm">
+                  <td colSpan={7} className="py-12 text-center text-slate-500 text-sm">
                     Немає зареєстрованих гравців у базі даних.
                   </td>
                 </tr>
@@ -185,7 +210,7 @@ export default function LeaderboardPage() {
                           : "hover:bg-white/[0.02]"
                       }`}
                     >
-                      <td className="py-4 px-6 text-center font-mono font-bold">
+                      <td className="py-4 px-5 text-center font-mono font-bold">
                         <span
                           className={`inline-flex items-center justify-center min-w-8 h-8 px-2 rounded-xl border text-xs font-black ${medalBadge}`}
                         >
@@ -193,7 +218,7 @@ export default function LeaderboardPage() {
                         </span>
                       </td>
 
-                      <td className="py-4 px-6">
+                      <td className="py-4 px-5">
                         <div className="flex items-center gap-3.5">
                           <div className="relative flex size-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-xs font-black text-[#05130d] shadow-md shadow-emerald-500/20">
                             {p.avatar}
@@ -212,21 +237,38 @@ export default function LeaderboardPage() {
                         </div>
                       </td>
 
-                      <td className="py-4 px-6">
+                      <td className="py-4 px-5">
                         <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-slate-300">
                           {p.rank}
                         </span>
                       </td>
 
-                      <td className="py-4 px-6 text-center font-mono font-bold text-slate-300">
+                      <td className="py-4 px-5 text-center font-mono font-bold text-slate-300">
                         {p.skinsCount} шт.
                       </td>
 
-                      <td className="py-4 px-6 text-right font-mono font-bold text-slate-200">
+                      <td className="py-4 px-5 text-right font-mono font-bold text-slate-200">
                         {formatCoins(p.inventoryValue)} GC
                       </td>
 
-                      <td className="py-4 px-6 text-right font-mono font-black text-emerald-400 text-base">
+                      {/* Стовпчик Профіт / Злив */}
+                      <td className="py-4 px-5 text-right font-mono font-bold">
+                        {p.profit > 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-black text-emerald-400 shadow-sm shadow-emerald-500/10">
+                            +{formatCoins(p.profit)} GC 📈
+                          </span>
+                        ) : p.profit < 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-xl border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-black text-rose-400 shadow-sm shadow-rose-500/10">
+                            -{formatCoins(Math.abs(p.profit))} GC 📉
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-xl border border-white/5 bg-white/5 px-2.5 py-1 text-xs font-bold text-slate-400">
+                            0 GC
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="py-4 px-5 text-right font-mono font-black text-emerald-400 text-base">
                         {formatCoins(p.totalWealth)} GC
                       </td>
                     </tr>
@@ -239,7 +281,7 @@ export default function LeaderboardPage() {
       </div>
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
-        <p>💡 Рейтинг оновлюється автоматично при реєстрації або зміні інвентаря гравців.</p>
+        <p>💡 Рейтинг оновлюється автоматично при реєстрації, виграші в апгрейдері або продажі скінів.</p>
         <Link href="/" className="font-bold text-emerald-400 hover:text-emerald-300 transition">
           Перейти до Апгрейдера →
         </Link>
