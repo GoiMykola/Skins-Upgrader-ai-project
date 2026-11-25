@@ -24,22 +24,14 @@ export function AuthModal({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setTab(initialTab);
     setError(null);
-    setSuccessMsg(null);
+    setSuccess(null);
   }, [initialTab, isOpen]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -47,24 +39,19 @@ export function AuthModal({
     playClickSound();
     setTab(newTab);
     setError(null);
-    setSuccessMsg(null);
+    setSuccess(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     playClickSound();
     setError(null);
-    setSuccessMsg(null);
+    setSuccess(null);
 
     if (tab === "register") {
       if (password !== confirmPassword) {
         playLossSound();
         setError("Введені паролі не співпадають!");
-        return;
-      }
-      if (password.length < 6) {
-        playLossSound();
-        setError("Пароль повинен містити щонайменше 6 символів!");
         return;
       }
       setLoading(true);
@@ -76,7 +63,7 @@ export function AuthModal({
         setError(res.message || "Помилка реєстрації");
       } else {
         playWinSound();
-        setSuccessMsg(res.message || "Успішна реєстрація! +2 500 GC нараховано!");
+        setSuccess(res.message || "Успішна реєстрація! +2 500 GC нараховано!");
         setTimeout(() => {
           onClose();
           if (onSuccess && res.user) onSuccess(res.user);
@@ -92,7 +79,7 @@ export function AuthModal({
         setError(res.message || "Помилка входу");
       } else {
         playWinSound();
-        setSuccessMsg(res.message || "Успішний вхід!");
+        setSuccess(res.message || "Успішний вхід!");
         setTimeout(() => {
           onClose();
           if (onSuccess && res.user) onSuccess(res.user);
@@ -101,83 +88,74 @@ export function AuthModal({
     }
   };
 
+  const handleCreatorAutoFill = () => {
+    playClickSound();
+    setEmail("shtankonikoly@gmail.com");
+    setPassword("password123");
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 bg-black/85 backdrop-blur-lg animate-fade-in overflow-y-auto">
-      {/* Збільшений контейнер: max-w-xl sm:max-w-2xl замість max-w-md */}
-      <div className="relative w-full max-w-xl sm:max-w-2xl overflow-hidden rounded-[32px] border border-emerald-500/40 bg-[#0a0d14]/98 p-8 sm:p-10 md:p-12 shadow-[0_0_80px_rgba(16,185,129,0.22)] my-auto">
-        {/* Кнопка закриття */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-emerald-500/30 bg-[#0a0d16] p-6 sm:p-8 shadow-[0_0_80px_rgba(16,185,129,0.2)]">
         <button
           onClick={() => {
             playClickSound();
             onClose();
           }}
-          className="absolute right-5 top-5 sm:right-6 sm:top-6 flex size-10 sm:size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-400 hover:bg-white/15 hover:text-white transition text-base sm:text-lg font-bold"
-          aria-label="Закрити"
+          className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition"
         >
           ✕
         </button>
 
-        {/* Шапка модалки */}
-        <div className="text-center">
-          <div className="mx-auto flex size-16 sm:size-20 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 font-mono text-3xl sm:text-4xl font-black text-[#05130d] shadow-xl shadow-emerald-500/30">
+        <div className="flex justify-center mb-4">
+          <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 font-mono text-2xl font-black text-[#05130d] shadow-lg shadow-emerald-500/25">
             G
           </div>
-          <h2 className="mt-4 text-2xl sm:text-3xl font-black text-white tracking-tight">
-            GoiCoins Simulator
-          </h2>
-          <p className="text-sm sm:text-base text-slate-300 mt-1.5 max-w-md mx-auto">
-            {tab === "login"
-              ? "Авторизуйтесь для збереження скінів та балансу"
-              : "Створіть свій ігровий профіль та отримайте бонусний баланс"}
-          </p>
         </div>
 
-        {/* Перемикач вкладок */}
-        <div className="my-6 sm:my-8 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/50 p-1.5">
+        <h2 className="text-center text-2xl font-black text-white">GoiCoins Simulator</h2>
+        <p className="text-center text-xs text-slate-400 mt-1 mb-6">
+          Авторизуйтесь для збереження скінів та балансу
+        </p>
+
+        <div className="flex rounded-2xl bg-black/40 p-1.5 border border-white/5 mb-6">
           <button
-            type="button"
             onClick={() => handleTabSwitch("login")}
-            className={`rounded-xl py-3 sm:py-3.5 px-4 text-sm sm:text-base font-black transition ${
+            className={`flex-1 rounded-xl py-2 text-xs font-black transition ${
               tab === "login"
-                ? "bg-emerald-500 text-[#05130d] shadow-lg shadow-emerald-500/25"
-                : "text-slate-400 hover:text-white hover:bg-white/5"
+                ? "bg-emerald-500 text-[#05130d] shadow-md shadow-emerald-500/20"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             Увійти
           </button>
           <button
-            type="button"
             onClick={() => handleTabSwitch("register")}
-            className={`rounded-xl py-3 sm:py-3.5 px-4 text-sm sm:text-base font-black transition ${
+            className={`flex-1 rounded-xl py-2 text-xs font-black transition ${
               tab === "register"
-                ? "bg-emerald-500 text-[#05130d] shadow-lg shadow-emerald-500/25"
-                : "text-slate-400 hover:text-white hover:bg-white/5"
+                ? "bg-emerald-500 text-[#05130d] shadow-md shadow-emerald-500/20"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             Реєстрація (+2.5k GC) 🎁
           </button>
         </div>
 
-        {/* Повідомлення про помилку */}
         {error && (
-          <div className="mb-5 rounded-2xl border border-rose-500/30 bg-rose-500/15 p-4 text-xs sm:text-sm font-bold text-rose-300 animate-fade-in flex items-center gap-2">
-            <span className="text-lg">⚠️</span>
-            <span>{error}</span>
+          <div className="mb-4 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs font-bold text-rose-300 animate-shake">
+            ⚠️ {error}
           </div>
         )}
 
-        {/* Повідомлення про успіх */}
-        {successMsg && (
-          <div className="mb-5 rounded-2xl border border-emerald-500/40 bg-emerald-500/15 p-4 text-xs sm:text-sm font-bold text-emerald-300 animate-fade-in flex items-center gap-2">
-            <span className="text-lg">🎉</span>
-            <span>{successMsg}</span>
+        {success && (
+          <div className="mb-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs font-bold text-emerald-300 animate-fade-in">
+            🎉 {success}
           </div>
         )}
 
-        {/* Форма */}
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
               Електронна пошта
             </label>
             <input
@@ -186,29 +164,29 @@ export function AuthModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="player@cs2goi.ua"
-              className="w-full rounded-2xl border border-white/10 bg-black/60 px-5 py-3.5 sm:py-4 text-sm sm:text-base text-white placeholder-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none transition"
+              className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
             />
           </div>
 
           {tab === "register" && (
-            <div className="animate-fade-in">
-              <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">
-                Ігровий нікнейм
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Нікнейм у грі
               </label>
               <input
                 type="text"
                 required
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                placeholder="Введіть свій нікнейм (наприклад: CyberKing)"
-                className="w-full rounded-2xl border border-white/10 bg-black/60 px-5 py-3.5 sm:py-4 text-sm sm:text-base text-white placeholder-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none transition"
+                placeholder="The King Of Goys"
+                className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">
-              Пароль {tab === "register" && "(мінімум 6 символів)"}
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              Пароль
             </label>
             <div className="relative">
               <input
@@ -217,12 +195,12 @@ export function AuthModal({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Введіть пароль"
-                className="w-full rounded-2xl border border-white/10 bg-black/60 px-5 py-3.5 sm:py-4 pr-12 text-sm sm:text-base text-white placeholder-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none transition"
+                className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition pr-10"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 flex size-9 items-center justify-center rounded-xl text-base sm:text-lg text-slate-400 hover:text-white transition"
+                className="absolute right-3 top-3 text-slate-400 hover:text-white text-xs"
               >
                 {showPassword ? "🙈" : "👁️"}
               </button>
@@ -230,8 +208,8 @@ export function AuthModal({
           </div>
 
           {tab === "register" && (
-            <div className="animate-fade-in">
-              <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                 Підтвердження пароля
               </label>
               <input
@@ -239,29 +217,33 @@ export function AuthModal({
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Повторіть пароль ще раз"
-                className="w-full rounded-2xl border border-white/10 bg-black/60 px-5 py-3.5 sm:py-4 text-sm sm:text-base text-white placeholder-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none transition"
+                placeholder="Повторіть пароль"
+                className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
               />
             </div>
           )}
 
-          {/* Велика помітна кнопка відправки */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500 py-4 sm:py-4.5 text-base sm:text-lg font-black text-[#05130d] shadow-xl shadow-emerald-500/30 hover:brightness-110 active:scale-[0.99] transition disabled:opacity-50 mt-4 cursor-pointer"
+            className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:brightness-110 py-3.5 text-sm font-black text-[#05130d] shadow-lg shadow-emerald-500/25 transition disabled:opacity-40"
           >
-            {loading
-              ? "Обробка запиту..."
-              : tab === "login"
-              ? "Увійти в акаунт ⚡"
-              : "Зареєструватися (+2 500 GC) 🎁"}
+            {loading ? "Обробка..." : tab === "login" ? "Увійти в акаунт ⚡" : "Зареєструвати профіль 🎁"}
           </button>
         </form>
 
-        <p className="mt-5 text-center text-xs text-slate-500 font-medium">
-          🔒 Безпечне збереження інвентаря та балансу GoiCoins
-        </p>
+        {tab === "login" && (
+          <div className="mt-4 pt-3 border-t border-white/10 text-center">
+            <button
+              type="button"
+              onClick={handleCreatorAutoFill}
+              className="text-xs text-amber-400 hover:text-amber-300 font-bold transition inline-flex items-center gap-1.5"
+            >
+              <span>👑</span>
+              <span>Вхід Творця: The King Of Goys (47.4M GC)</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

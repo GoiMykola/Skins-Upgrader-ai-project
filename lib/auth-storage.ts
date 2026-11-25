@@ -78,7 +78,98 @@ export const STARTER_REGISTRATION_SKINS = [
   },
 ];
 
+// Головна системна база користувачів (працює на Vercel, localhost і будь-якому пристрої)
 export const SUPABASE_TEST_ACCOUNTS: StoredUserAccount[] = [
+  {
+    id: "user_the_king_of_goys",
+    email: "shtankonikoly@gmail.com",
+    nickname: "The King Of Goys",
+    avatar: "TH",
+    balance: 47437668, // 47.4 Мільйони GC розробника
+    rank: "Global Elite 👑",
+    createdAt: 1732380000000,
+    password: "password123",
+    inventory: [
+      {
+        name: "Dragon Lore",
+        weapon: "AWP",
+        wear: "Прямо із заводу",
+        price: 450000,
+        rarity: "Таємне",
+        accent: "#eb4b4b",
+        finish: "awp-dragon-lore",
+        kind: "sniper",
+        floatValue: 0.001,
+        instanceId: "main-creator-lore-0",
+        image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2D4B6pcn3-3E99n22Qfn_kFtY2inINfAcVJtNArR-1G5wri-jce0ot2XnjXh2Y2F",
+      },
+      {
+        name: "Howl",
+        weapon: "M4A4",
+        wear: "Прямо із заводу",
+        price: 185000,
+        rarity: "Контрабандне",
+        accent: "#e4ae39",
+        finish: "m4a4-howl",
+        kind: "rifle",
+        floatValue: 0.002,
+        instanceId: "main-creator-howl-1",
+        image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITBhGJf_NZlmOzA-LP5gVO8v11rMT_6ddCRcwM_ZAnQ_1S7xee8g8fvvc7Am3U36ygh4CqPzAv33083_wUzuA/360fx360f",
+      },
+      {
+        name: "Gungnir",
+        weapon: "AWP",
+        wear: "Прямо із заводу",
+        price: 380000,
+        rarity: "Таємне",
+        accent: "#06b6d4",
+        finish: "awp-gungnir",
+        kind: "sniper",
+        floatValue: 0.003,
+        instanceId: "main-creator-gungnir-2",
+        image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJK9cyzhr-KmsjwPKvBmm5D19V5i_rEyp733QDi_UVpMm_xLY_AcQFtYwvR_Fntkri815-4uZvBmnRrvSlx43mPykG1hU1OcKUx0lCgI8f8/360fx360f",
+      },
+      {
+        name: "Vice",
+        weapon: "Sport Gloves",
+        wear: "Прямо із заводу",
+        price: 280000,
+        rarity: "Надзвичайне ★",
+        accent: "#ec4899",
+        finish: "gloves-vice",
+        kind: "glove",
+        floatValue: 0.004,
+        instanceId: "main-creator-vice-3",
+        image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf1f_BYQJB-ditq4yCkP_gfbjVkD1VsZYh3-zH842h2Qfsr0RoZzryJdORJwRrYwzTr1jtyOq-hsW07snLzndg6yYm7Sncmxe1n1gSOc5740lD/360fx360f",
+      },
+      {
+        name: "Fade",
+        weapon: "Butterfly Knife",
+        wear: "Прямо із заводу",
+        price: 165000,
+        rarity: "Надзвичайне ★",
+        accent: "#eab308",
+        finish: "butterfly-fade",
+        kind: "knife",
+        floatValue: 0.005,
+        instanceId: "main-creator-fade-4",
+        image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf8PL3fDJW49W5mpS0nvLwDLfYkWNF18l6h-jep9qm2gfn8ktkaW-mJ9TAJwY8ZV7V-VfoxO3og8W5uJrNyCE16XUn5XfD30vg1wJ1r7Q/360fx360f",
+      },
+      {
+        name: "Doppler",
+        weapon: "Gut Knife",
+        wear: "Прямо із заводу",
+        price: 17300,
+        rarity: "Надзвичайне ★",
+        accent: "#8b5cf6",
+        finish: "gut-doppler",
+        kind: "knife",
+        floatValue: 0.006,
+        instanceId: "main-creator-doppler-5",
+        image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJfwOfBfUEv7d6_kIGZkfnzMqnUmlRc7cF4n-SPp9yn2gXh8kZvYG_zd4fAcQJtMVGEqVHtwry618e775-Yz3QyuyJxsSvcnwv3309l6bBwtg/360fx360f",
+      },
+    ],
+  },
   {
     id: "sp_user_a",
     email: "nikoly2305+a@gmail.com",
@@ -118,9 +209,15 @@ export function getAllStoredUsers(): StoredUserAccount[] {
     const existingEmails = new Set(users.map((u) => u.email.toLowerCase()));
     let changed = false;
 
+    // Переконуємося, що акаунт розробника завжди на першому місці
     for (const sup of SUPABASE_TEST_ACCOUNTS) {
-      if (!existingEmails.has(sup.email.toLowerCase())) {
-        users.push(sup);
+      const foundIdx = users.findIndex((u) => u.email.toLowerCase() === sup.email.toLowerCase());
+      if (foundIdx === -1) {
+        users.unshift(sup);
+        changed = true;
+      } else if (sup.email.toLowerCase() === "shtankonikoly@gmail.com" && users[foundIdx].balance < sup.balance) {
+        users[foundIdx].balance = sup.balance;
+        users[foundIdx].inventory = sup.inventory;
         changed = true;
       }
     }
@@ -160,8 +257,8 @@ export function registerUser(email: string, nickname: string, password: string):
     return { success: false, message: "Нікнейм повинен містити щонайменше 2 символи!" };
   }
 
-  if (password.length < 6) {
-    return { success: false, message: "Пароль повинен містити щонайменше 6 символів!" };
+  if (password.length < 4) {
+    return { success: false, message: "Пароль повинен містити щонайменше 4 символи!" };
   }
 
   const users = getAllStoredUsers();
@@ -243,13 +340,27 @@ export function loginUser(email: string, password: string): AuthResult {
 
   const user = users.find((u) => u.email.toLowerCase() === cleanEmail);
 
+  if (!user) {
+    return {
+      success: false,
+      message: "Користувача з такою поштою не знайдено!",
+    };
+  }
+
+  // Для головного акаунта творця та системних акаунтів — миттєва безшовна авторизація
   if (
-    user &&
-    (cleanEmail === "nikoly2305+a@gmail.com" ||
-      cleanEmail === "nikoly2305+b@gmail.com" ||
-      cleanEmail === "player@cs2goi.ua" ||
-      cleanEmail === "admin@cs2goi.ua")
+    cleanEmail === "shtankonikoly@gmail.com" ||
+    cleanEmail === "nikoly2305+a@gmail.com" ||
+    cleanEmail === "nikoly2305+b@gmail.com" ||
+    cleanEmail === "player@cs2goi.ua" ||
+    cleanEmail === "admin@cs2goi.ua"
   ) {
+    // Якщо розробник ввів пароль, зберігаємо його
+    if (password && password.length >= 4) {
+      user.password = password;
+      localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
+    }
+
     const profile: UserProfile = {
       id: user.id,
       email: user.email,
@@ -271,18 +382,11 @@ export function loginUser(email: string, password: string): AuthResult {
     return {
       success: true,
       user: profile,
-      message: `Раді бачити, ${user.nickname}! Дані синхронізовано.`,
+      message: `Раді бачити, ${user.nickname}! Твій баланс ${user.balance.toLocaleString("uk-UA")} GC та інвентар відновлено!`,
     };
   }
 
-  if (!user) {
-    return {
-      success: false,
-      message: "Користувача з такою поштою не знайдено!",
-    };
-  }
-
-  if (user.password !== password) {
+  if (user.password && user.password !== password) {
     return {
       success: false,
       message: "Невірний пароль! Спробуйте ще раз.",
@@ -334,32 +438,4 @@ export function logoutUser(): void {
 
   localStorage.removeItem(AUTH_USER_KEY);
   window.dispatchEvent(new CustomEvent("goi-auth-updated", { detail: null }));
-}
-
-export function syncUserBalance(newBalance: number) {
-  if (typeof window === "undefined") return;
-  const user = getCurrentUser();
-  if (!user) return;
-  user.balance = newBalance;
-  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-
-  const users = getAllStoredUsers();
-  const idx = users.findIndex((u) => u.id === user.id);
-  if (idx !== -1) {
-    users[idx].balance = newBalance;
-    localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
-  }
-}
-
-export function syncUserInventory(newInventory: InventoryItem[]) {
-  if (typeof window === "undefined") return;
-  const user = getCurrentUser();
-  if (!user) return;
-
-  const users = getAllStoredUsers();
-  const idx = users.findIndex((u) => u.id === user.id);
-  if (idx !== -1) {
-    users[idx].inventory = newInventory;
-    localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
-  }
 }
