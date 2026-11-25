@@ -2,6 +2,7 @@ import Link from "next/link";
 import { skins } from "./data";
 import { LiveDropsTicker } from "@/components/live-drops-ticker";
 import { InteractiveUpgrader } from "@/components/interactive-upgrader";
+import { AiMemorial } from "@/components/ai-memorial";
 import SkinTile from "./components/skin-tile";
 
 export default function Home() {
@@ -53,6 +54,7 @@ export default function Home() {
           </div>
         </section>
       </main>
+      <AiMemorial />
     </div>
   );
 }

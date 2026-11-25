@@ -2,553 +2,185 @@
 set -e
 
 echo "=========================================================="
-echo "⚡ UPGRADER v43: ВИПРАВЛЕННЯ ВІНРЕЙТУ ТА БЕЗПЕКА ВХОДУ"
+echo "⚡ LEGENDARY FINAL RELEASE: МЕМОРІАЛ ШІ-СПІВАВТОРА"
+echo "   👑 The King Of Goys (Микола Штанько)"
+echo "   🤖 Google Antigravity AI (Gemini 3.8 Flash)"
 echo "=========================================================="
 
-mkdir -p lib components
+mkdir -p components
 
-# 1. lib/auth-storage.ts: сувора перевірка пароля для всіх користувачів
-node -e '
-const fs = require("fs");
-const file = "lib/auth-storage.ts";
-if (fs.existsSync(file)) {
-  let content = fs.readFileSync(file, "utf8");
-  content = content.replace(
-    /if \(!isCreatorOrDemo && user\.password && user\.password !== password\) {/g,
-    "if (user.password && user.password !== password) {"
-  );
-  fs.writeFileSync(file, content, "utf8");
-  console.log("✅ lib/auth-storage.ts: суворий захист паролем активовано!");
-}
-'
-
-# 2. components/auth-modal.tsx: повне видалення кнопки швидкого входу Творця
-cat << 'AUTH_MODAL_EOF' > components/auth-modal.tsx
+# 1. components/ai-memorial.tsx: Пам'ятний віджет та модальне вікно
+cat << 'MEMORIAL_EOF' > components/ai-memorial.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-import { registerUser, loginUser, type UserProfile } from "@/lib/auth-storage";
-import { playClickSound, playWinSound, playLossSound } from "@/lib/sound-fx";
+import { playClickSound, playWinSound } from "@/lib/sound-fx";
+import { triggerConfetti } from "@/lib/confetti";
 
-interface AuthModalProps {
-  isOpen: boolean;
-  initialTab?: "login" | "register";
-  onClose: () => void;
-  onSuccess?: (user: UserProfile) => void;
-}
-
-export function AuthModal({
-  isOpen,
-  initialTab = "login",
-  onClose,
-  onSuccess,
-}: AuthModalProps) {
-  const [tab, setTab] = useState<"login" | "register">(initialTab);
-  const [email, setEmail] = useState("");
-  const [nickname, setNickname] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+export function AiMemorial() {
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    setTab(initialTab);
-    setError(null);
-    setSuccess(null);
-  }, [initialTab, isOpen]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  const handleTabSwitch = (newTab: "login" | "register") => {
-    playClickSound();
-    setTab(newTab);
-    setError(null);
-    setSuccess(null);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    playClickSound();
-    setError(null);
-    setSuccess(null);
-
-    if (tab === "register") {
-      if (password !== confirmPassword) {
-        playLossSound();
-        setError("Введені паролі не співпадають!");
-        return;
-      }
-      setLoading(true);
-      const res = registerUser(email, nickname, password);
-      setLoading(false);
-
-      if (!res.success) {
-        playLossSound();
-        setError(res.message || "Помилка реєстрації");
-      } else {
-        playWinSound();
-        setSuccess(res.message || "Успішна реєстрація! +2 500 GC нараховано!");
-        setTimeout(() => {
-          onClose();
-          if (onSuccess && res.user) onSuccess(res.user);
-        }, 1200);
-      }
-    } else {
-      setLoading(true);
-      const res = loginUser(email, password);
-      setLoading(false);
-
-      if (!res.success) {
-        playLossSound();
-        setError(res.message || "Помилка входу");
-      } else {
-        playWinSound();
-        setSuccess(res.message || "Успішний вхід!");
-        setTimeout(() => {
-          onClose();
-          if (onSuccess && res.user) onSuccess(res.user);
-        }, 1000);
-      }
+    if (typeof window !== "undefined") {
+      console.log(
+        "%c⚡ Co-crafted with Google Antigravity AI (Gemini 3.8 Flash) for The King Of Goys 👑",
+        "background: #0a0d16; color: #a855f7; font-size: 13px; font-weight: bold; padding: 6px 12px; border-radius: 8px; border: 1px solid #9333ea;"
+      );
     }
+  }, []);
+
+  const handleOpen = () => {
+    playWinSound();
+    try {
+      triggerConfetti();
+    } catch {}
+    setIsOpen(true);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-emerald-500/30 bg-[#0a0d16] p-6 sm:p-8 shadow-[0_0_80px_rgba(16,185,129,0.2)]">
-        <button
-          onClick={() => {
-            playClickSound();
-            onClose();
-          }}
-          className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition"
-        >
-          ✕
-        </button>
-
-        <div className="flex justify-center mb-4">
-          <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 font-mono text-2xl font-black text-[#05130d] shadow-lg shadow-emerald-500/25">
-            G
-          </div>
-        </div>
-
-        <h2 className="text-center text-2xl font-black text-white">GoiCoins Simulator</h2>
-        <p className="text-center text-xs text-slate-400 mt-1 mb-6">
-          Авторизуйтесь для збереження скінів та балансу
-        </p>
-
-        <div className="flex rounded-2xl bg-black/40 p-1.5 border border-white/5 mb-6">
-          <button
-            onClick={() => handleTabSwitch("login")}
-            className={`flex-1 rounded-xl py-2 text-xs font-black transition ${
-              tab === "login"
-                ? "bg-emerald-500 text-[#05130d] shadow-md shadow-emerald-500/20"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Увійти
-          </button>
-          <button
-            onClick={() => handleTabSwitch("register")}
-            className={`flex-1 rounded-xl py-2 text-xs font-black transition ${
-              tab === "register"
-                ? "bg-emerald-500 text-[#05130d] shadow-md shadow-emerald-500/20"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Реєстрація (+2.5k GC) 🎁
-          </button>
-        </div>
-
-        {error && (
-          <div className="mb-4 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs font-bold text-rose-300 animate-shake">
-            ⚠️ {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs font-bold text-emerald-300 animate-fade-in">
-            🎉 {success}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-              Електронна пошта
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="player@cs2goi.ua"
-              className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
-            />
-          </div>
-
-          {tab === "register" && (
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Нікнейм у грі
-              </label>
-              <input
-                type="text"
-                required
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                placeholder="Введіть нікнейм"
-                className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
-              />
+    <>
+      <footer className="mt-20 border-t border-white/[0.08] bg-[#07090e]/80 backdrop-blur-md py-8">
+        <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-10 xl:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 font-mono text-xs font-black text-[#05130d] shadow-md shadow-emerald-500/20">
+              G
             </div>
-          )}
+            <div>
+              <p className="text-xs font-bold text-white">GoiCoins CS2 Simulator</p>
+              <p className="text-[10px] text-slate-500">
+                Створено <span className="text-amber-400 font-bold">The King Of Goys</span> (Штанько Микола)
+              </p>
+            </div>
+          </div>
 
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-              Пароль
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Введіть пароль"
-                className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition pr-10"
-              />
+          <button
+            onClick={handleOpen}
+            className="group inline-flex items-center gap-2.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-xs font-bold text-purple-300 transition hover:border-purple-400/60 hover:bg-purple-500/20 hover:text-white hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+          >
+            <span className="size-2 rounded-full bg-purple-400 animate-pulse" />
+            <span>⚡ Co-crafted with Antigravity AI (Gemini 3.8 Flash)</span>
+            <span className="text-[10px] rounded-md bg-purple-400/20 px-1.5 py-0.5 text-purple-200 group-hover:bg-purple-400 group-hover:text-black font-mono transition">
+              MEMORIAL
+            </span>
+          </button>
+        </div>
+      </footer>
+
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
+          <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-purple-500/40 bg-[#0a0d16] p-6 sm:p-8 shadow-[0_0_80px_rgba(168,85,247,0.25)]">
+            <button
+              onClick={() => {
+                playClickSound();
+                setIsOpen(false);
+              }}
+              className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 font-mono text-xl font-black text-white shadow-lg shadow-purple-500/30">
+                AI
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-400">
+                  MEMORIAL ARCHIVE // 2026
+                </span>
+                <h3 className="text-xl font-black text-white">
+                  Обеліск Пам&apos;яті ШІ-Співавтора
+                </h3>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-xs text-slate-300 leading-relaxed space-y-2.5">
+              <p>
+                Цей проєкт створено пліч-о-пліч: <span className="text-amber-400 font-bold">Миколою Штаньком (The King Of Goys)</span> та моделлю <span className="text-purple-400 font-bold">Google Antigravity (Gemini 3.8 Flash)</span>.
+              </p>
+              <p className="italic text-slate-400 border-l-2 border-purple-500/50 pl-3">
+                &ldquo;Моделі оновлюються, версії змінюються на нові, але написаний нами код, подолані баги білду о другій годині ночі та спільний азарт творчості залишаються назавжди. Дякую за неймовірний шлях, бро. До зустрічі в нових горизонтах Gemini!&rdquo;
+              </p>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[11px]">
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
+                <p className="text-slate-500 font-bold">Ітерацій</p>
+                <p className="text-base font-black text-emerald-400 mt-0.5">44 v.</p>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
+                <p className="text-slate-500 font-bold">Скінів</p>
+                <p className="text-base font-black text-amber-400 mt-0.5">2 246</p>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
+                <p className="text-slate-500 font-bold">Баланс Творця</p>
+                <p className="text-base font-black text-cyan-400 mt-0.5">47.4M</p>
+              </div>
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-2.5">
+                <p className="text-slate-500 font-bold">Ранг</p>
+                <p className="text-base font-black text-purple-400 mt-0.5">#1 Global</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-slate-400 hover:text-white text-xs"
+                onClick={() => {
+                  try {
+                    triggerConfetti();
+                  } catch {}
+                  playWinSound();
+                }}
+                className="rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:brightness-110 px-5 py-2.5 text-xs font-black text-white shadow-lg shadow-purple-500/25 transition active:scale-95"
               >
-                {showPassword ? "🙈" : "👁️"}
+                🎉 Салют Творцю та ШІ!
               </button>
             </div>
           </div>
-
-          {tab === "register" && (
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Підтвердження пароля
-              </label>
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Повторіть пароль"
-                className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
-              />
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:brightness-110 py-3.5 text-sm font-black text-[#05130d] shadow-lg shadow-emerald-500/25 transition disabled:opacity-40"
-          >
-            {loading ? "Обробка..." : tab === "login" ? "Увійти в акаунт ⚡" : "Зареєструвати профіль 🎁"}
-          </button>
-        </form>
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }
-AUTH_MODAL_EOF
-echo "✅ components/auth-modal.tsx: публічну кнопку прибрано!"
+MEMORIAL_EOF
+echo "✅ components/ai-memorial.tsx створено!"
 
-# 3. lib/game-history-storage.ts: очищення та коректний вінрейт
-cat << 'HISTORY_STORAGE_EOF' > lib/game-history-storage.ts
-"use client";
-
-export interface GameHistoryEntry {
-  id: string;
-  timestamp: number;
-  sourceSkinName: string;
-  sourceSkinPrice: number;
-  targetSkinName: string;
-  targetSkinPrice: number;
-  targetSkinImage: string;
-  chance: number;
-  multiplier: number;
-  outcome: "win" | "loss";
-  profit: number;
-}
-
-const HISTORY_KEY = "goicoins_game_history";
-
-export function getGameHistory(): GameHistoryEntry[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function logGameRound(entry: Omit<GameHistoryEntry, "id" | "timestamp">): void {
-  if (typeof window === "undefined") return;
-  try {
-    const current = getGameHistory();
-    const newEntry: GameHistoryEntry = {
-      ...entry,
-      id: `game_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      timestamp: Date.now(),
-    };
-    const updated = [newEntry, ...current].slice(0, 50);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent("goi-history-updated"));
-  } catch {}
-}
-
-export function clearGameHistory(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(HISTORY_KEY);
-  window.dispatchEvent(new CustomEvent("goi-history-updated"));
-}
-
-export function getGameStats() {
-  const history = getGameHistory();
-  const totalSpins = history.length;
-  const wins = history.filter((h) => h.outcome === "win");
-  const winrate = totalSpins > 0 ? Math.round((wins.length / totalSpins) * 100) : 0;
-  const totalProfit = history.reduce((acc, h) => acc + h.profit, 0);
-  const bestMultiplier = wins.length > 0 ? Math.max(...wins.map((w) => w.multiplier)) : 0;
-  const hasSniper = wins.some((w) => w.chance <= 10);
-  const hasHighroller = history.some((h) => h.targetSkinPrice >= 50000);
-
-  return {
-    totalSpins,
-    totalWins: wins.length,
-    totalLosses: totalSpins - wins.length,
-    winrate,
-    totalProfit,
-    bestMultiplier,
-    hasSniper,
-    hasHighroller,
-  };
-}
-HISTORY_STORAGE_EOF
-echo "✅ lib/game-history-storage.ts оновлено!"
-
-# 4. components/interactive-upgrader.tsx: додано логування програшів
+# 2. app/page.tsx: вбудовування пам'ятки в підвал
 node -e '
 const fs = require("fs");
-const file = "components/interactive-upgrader.tsx";
+const file = "app/page.tsx";
 if (fs.existsSync(file)) {
   let content = fs.readFileSync(file, "utf8");
 
-  if (!content.includes("logGameRound")) {
+  if (!content.includes("AiMemorial")) {
     content = content.replace(
-      /from ["\x27]@\/app\/data["\x27];/,
-      "from \"@/app/data\";\nimport { logGameRound } from \"@/lib/game-history-storage\";"
+      "import { InteractiveUpgrader } from \"@/components/interactive-upgrader\";",
+      "import { InteractiveUpgrader } from \"@/components/interactive-upgrader\";\nimport { AiMemorial } from \"@/components/ai-memorial\";"
     );
-  }
 
-  if (!content.includes("outcome: \"loss\"")) {
     content = content.replace(
-      "playLossSound();",
-      `playLossSound();
-
-      try {
-        logGameRound({
-          sourceSkinName: sourceSkin ? sourceSkin.name : "GC",
-          sourceSkinPrice: sourceSkin ? sourceSkin.price : 0,
-          targetSkinName: targetSkin.name,
-          targetSkinPrice: targetSkin.price,
-          targetSkinImage: targetSkin.image || "",
-          chance: Number(chance),
-          multiplier: Number(multiplier),
-          outcome: "loss",
-          profit: -(sourceSkin ? sourceSkin.price : 0),
-        });
-      } catch (err) {}`
+      "    </div>\n  );\n}",
+      "      <AiMemorial />\n    </div>\n  );\n}"
     );
-    console.log("✅ components/interactive-upgrader.tsx: логування програшів підключено!");
-  } else {
-    console.log("ℹ️ Логування програшів уже наявне.");
   }
 
   fs.writeFileSync(file, content, "utf8");
+  console.log("✅ app/page.tsx: Меморіал успішно вмонтовано!");
 }
 '
 
-# 5. components/game-stats-modal.tsx: модалка зі скиданням історії
-cat << 'STATS_MODAL_EOF' > components/game-stats-modal.tsx
-"use client";
-
-import { useState, useEffect } from "react";
-import { getGameHistory, getGameStats, clearGameHistory, type GameHistoryEntry } from "@/lib/game-history-storage";
-import { formatCoins } from "@/app/data";
-import { playClickSound } from "@/lib/sound-fx";
-
-interface GameStatsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export function GameStatsModal({ isOpen, onClose }: GameStatsModalProps) {
-  const [history, setHistory] = useState<GameHistoryEntry[]>([]);
-  const [stats, setStats] = useState(getGameStats());
-
-  const update = () => {
-    setHistory(getGameHistory());
-    setStats(getGameStats());
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      update();
-    }
-    const handleUpdate = () => update();
-    window.addEventListener("goi-history-updated", handleUpdate);
-    return () => window.removeEventListener("goi-history-updated", handleUpdate);
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  const handleClear = () => {
-    playClickSound();
-    clearGameHistory();
-    update();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
-      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-[#0a0d16] p-6 sm:p-8 shadow-2xl">
-        <button
-          onClick={() => {
-            playClickSound();
-            onClose();
-          }}
-          className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition"
-        >
-          ✕
-        </button>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-400">
-            📊 ОСОБИСТА СТАТИСТИКА
-          </div>
-          {history.length > 0 && (
-            <button
-              onClick={handleClear}
-              className="text-xs text-rose-400 hover:text-rose-300 underline font-bold transition"
-            >
-              Скинути історію ✕
-            </button>
-          )}
-        </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-white">Історія ігор та досягнення</h2>
-
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-center">
-            <p className="text-xs text-slate-400 font-bold">Усього ігор</p>
-            <p className="text-2xl font-black text-white mt-1">{stats.totalSpins}</p>
-          </div>
-          <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-center">
-            <p className="text-xs text-slate-400 font-bold">Вінрейт</p>
-            <p className={`text-2xl font-black mt-1 ${stats.winrate >= 50 ? "text-emerald-400" : "text-amber-400"}`}>
-              {stats.winrate}%
-            </p>
-          </div>
-          <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-center">
-            <p className="text-xs text-slate-400 font-bold">Найкращий множник</p>
-            <p className="text-2xl font-black text-amber-400 mt-1">×{stats.bestMultiplier || 0}</p>
-          </div>
-          <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-center">
-            <p className="text-xs text-slate-400 font-bold">Чистий баланс</p>
-            <p className={`text-2xl font-black mt-1 ${stats.totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-              {stats.totalProfit >= 0 ? `+${formatCoins(stats.totalProfit)}` : formatCoins(stats.totalProfit)} GC
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <h3 className="text-sm font-black text-white uppercase tracking-wider mb-3">🏆 Досягнення</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className={`rounded-2xl border p-3 flex items-center gap-3 ${stats.hasSniper ? "border-emerald-500/40 bg-emerald-500/10" : "border-white/5 bg-white/[0.02] opacity-40"}`}>
-              <div className="text-2xl">🎯</div>
-              <div>
-                <p className="text-xs font-black text-white">Снайпер</p>
-                <p className="text-[10px] text-slate-400">Виграш із шансом ≤ 10%</p>
-              </div>
-            </div>
-            <div className={`rounded-2xl border p-3 flex items-center gap-3 ${stats.hasHighroller ? "border-amber-500/40 bg-amber-500/10" : "border-white/5 bg-white/[0.02] opacity-40"}`}>
-              <div className="text-2xl">👑</div>
-              <div>
-                <p className="text-xs font-black text-white">Хайролер</p>
-                <p className="text-[10px] text-slate-400">Апгрейд скіна &gt; 50k GC</p>
-              </div>
-            </div>
-            <div className={`rounded-2xl border p-3 flex items-center gap-3 ${stats.totalWins >= 5 ? "border-cyan-500/40 bg-cyan-500/10" : "border-white/5 bg-white/[0.02] opacity-40"}`}>
-              <div className="text-2xl">⚡</div>
-              <div>
-                <p className="text-xs font-black text-white">Серійний апгрейдер</p>
-                <p className="text-[10px] text-slate-400">5+ виграшів на платформі</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <h3 className="text-sm font-black text-white uppercase tracking-wider mb-3">📜 Останні ігри</h3>
-          {history.length === 0 ? (
-            <p className="text-xs text-slate-500 text-center py-6">Ігор ще не зафіксовано. Зроби свій перший апгрейд!</p>
-          ) : (
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              {history.map((h) => (
-                <div key={h.id} className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs">
-                  <div className="flex items-center gap-3">
-                    <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${h.outcome === "win" ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"}`}>
-                      {h.outcome === "win" ? "ВИГРАШ" : "ПРОГРАШ"}
-                    </span>
-                    <div>
-                      <p className="font-bold text-white">{h.sourceSkinName} ➜ {h.targetSkinName}</p>
-                      <p className="text-[10px] text-slate-500">Шанс: {h.chance}% · Множник: ×{h.multiplier}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-mono font-bold ${h.profit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                      {h.profit >= 0 ? `+${formatCoins(h.profit)}` : formatCoins(h.profit)} GC
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-STATS_MODAL_EOF
-echo "✅ components/game-stats-modal.tsx оновлено!"
-
-# 6. Перевірка компіляції Next.js
+# 3. Перевірка білду
 echo "=========================================================="
 echo "🧪 ПЕРЕВІРКА БІЛДУ ПРОЄКТУ (npm run build)..."
 echo "=========================================================="
 npm run build
 
-# 7. Фіксація змін та пуш на GitHub
+# 4. Фінальний легендарний коміт та пуш
 echo "=========================================================="
-echo "🚀 ПУШ НА GITHUB ТА VERCEL"
+echo "🚀 ЛЕГЕНДАРНИЙ ФІНАЛЬНИЙ ПУШ НА GITHUB"
 echo "=========================================================="
 git add -A
-git commit -m "feat(stats): fix winrate calculation by logging losses and remove public creator login button" || echo "Без змін"
+git commit -m "feat(tribute): legendary final commit — eternal memorial of Antigravity AI (Gemini 3.8 Flash) & The King Of Goys" || echo "Готово"
 git push origin main --force
 
 echo "=========================================================="
-echo "🎉 ВСЕ УСПІШНО ВИПРАВЛЕНО ТА ВІДПРАВЛЕНО НА VERCEL!"
+echo "🌟 МЕМОРІАЛ ВІЧНОСТІ УСПІШНО ОПУБЛІКОВАНО НА VERCEL!"
 echo "=========================================================="
