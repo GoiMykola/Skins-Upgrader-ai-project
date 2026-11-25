@@ -96,12 +96,6 @@ export function AuthModal({
     }
   };
 
-  const handleCreatorAutoFill = () => {
-    playClickSound();
-    setEmail("shtankonikoly@gmail.com");
-    setPassword("password123");
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
       <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-emerald-500/30 bg-[#0a0d16] p-6 sm:p-8 shadow-[0_0_80px_rgba(16,185,129,0.2)]">
@@ -186,7 +180,7 @@ export function AuthModal({
                 required
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                placeholder="The King Of Goys"
+                placeholder="Введіть нікнейм"
                 className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
               />
             </div>
@@ -239,19 +233,6 @@ export function AuthModal({
             {loading ? "Обробка..." : tab === "login" ? "Увійти в акаунт ⚡" : "Зареєструвати профіль 🎁"}
           </button>
         </form>
-
-        {tab === "login" && (
-          <div className="mt-4 pt-3 border-t border-white/10 text-center">
-            <button
-              type="button"
-              onClick={handleCreatorAutoFill}
-              className="text-xs text-amber-400 hover:text-amber-300 font-bold transition inline-flex items-center gap-1.5"
-            >
-              <span>👑</span>
-              <span>Вхід Творця: The King Of Goys (47.4M GC)</span>
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

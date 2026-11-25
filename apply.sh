@@ -2,485 +2,28 @@
 set -e
 
 echo "=========================================================="
-echo "⚡ UPGRADER v42: ВИПРАВЛЕННЯ TURBOPACK ТА СИНХРОНІЗАЦІЇ ЕКСПОРТІВ"
+echo "⚡ UPGRADER v43: ВИПРАВЛЕННЯ ВІНРЕЙТУ ТА БЕЗПЕКА ВХОДУ"
 echo "=========================================================="
 
 mkdir -p lib components
 
-# 1. next.config.mjs без застарілих ключів для Next.js 16
-rm -f next.config.ts next.config.js
-cat << 'CONFIG_EOF' > next.config.mjs
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "**" },
-    ],
-  },
-};
-
-export default nextConfig;
-CONFIG_EOF
-
-# 2. lib/auth-storage.ts: з усіма експортами для inventory-storage
-cat << 'AUTH_EOF' > lib/auth-storage.ts
-"use client";
-
-import type { InventoryItem } from "./inventory-storage";
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  nickname: string;
-  avatar: string;
-  balance: number;
-  rank: string;
-  createdAt: number;
-  initialCapital?: number;
+# 1. lib/auth-storage.ts: сувора перевірка пароля для всіх користувачів
+node -e '
+const fs = require("fs");
+const file = "lib/auth-storage.ts";
+if (fs.existsSync(file)) {
+  let content = fs.readFileSync(file, "utf8");
+  content = content.replace(
+    /if \(!isCreatorOrDemo && user\.password && user\.password !== password\) {/g,
+    "if (user.password && user.password !== password) {"
+  );
+  fs.writeFileSync(file, content, "utf8");
+  console.log("✅ lib/auth-storage.ts: суворий захист паролем активовано!");
 }
+'
 
-export interface StoredUserAccount extends UserProfile {
-  password: string;
-  inventory: InventoryItem[];
-}
-
-export interface AuthResult {
-  success: boolean;
-  message?: string;
-  user?: UserProfile;
-}
-
-export const AUTH_USER_KEY = "goicoins_current_user";
-export const AUTH_USERS_DB_KEY = "goicoins_users_db";
-export const STARTER_REGISTRATION_BONUS_GC = 2500;
-
-export const STARTER_REGISTRATION_SKINS = [
-  {
-    name: "Neon Rider",
-    weapon: "AK-47",
-    wear: "Прямо із заводу",
-    price: 4200,
-    rarity: "Таємне",
-    accent: "#ec4899",
-    finish: "neon-rider",
-    kind: "rifle" as const,
-    image:
-      "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL8ypexwhFQyvj8V7p8POXfDWadweB-Xxa_nRwvpnfSwNv7IHiQPFp1DYVyEbZY5xnrxtPjM7vnsgH_2o1A3t3x73z9yF-xW-I",
-  },
-  {
-    name: "Hyper Beast",
-    weapon: "AWP",
-    wear: "Після польових",
-    price: 2800,
-    rarity: "Таємне",
-    accent: "#eb4b4b",
-    finish: "hyper-beast",
-    kind: "sniper" as const,
-    image:
-      "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLwiYbf_jdk7uW-V6x0MPWBMWWVwP1ij-1gSCGn20pxtm_WzNuoeHKeaFAnCZUiTe5bt0HqxofmZOrm5Q2IjoMQzS_5iShXrnE8NzWs__c",
-  },
-  {
-    name: "Printstream",
-    weapon: "Desert Eagle",
-    wear: "Прямо із заводу",
-    price: 3900,
-    rarity: "Таємне",
-    accent: "#e0e7ff",
-    finish: "deagle-printstream",
-    kind: "pistol" as const,
-    image:
-      "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL1m5fn8Sdk7OeRbKFsJ8-DHG6e1f1iouRoQha_nBovp3OGmdeqInyVP1V0XsYlRbEI50a5wNyzZr605AyI3t5MmCSohylAuC89_a9cBoMY9UkV",
-  },
-  {
-    name: "Kill Confirmed",
-    weapon: "USP-S",
-    wear: "Прямо із заводу",
-    price: 3200,
-    rarity: "Таємне",
-    accent: "#ef4444",
-    finish: "usps-kill-confirmed",
-    kind: "pistol" as const,
-    image:
-      "https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL1m5fn8S1E8emXZadkM-GGCWWZ_eJ_t-loA36mxw4u5GyAzNuufC3XPlNxA5YmEbZI71W8kIznZ-y6v1Xp2t9NzS_5mStXrnE9vW0vK9c",
-  },
-];
-
-export const SUPABASE_TEST_ACCOUNTS: StoredUserAccount[] = [
-  {
-    id: "user_the_king_of_goys",
-    email: "shtankonikoly@gmail.com",
-    nickname: "The King Of Goys",
-    avatar: "TH",
-    balance: 47437668,
-    rank: "Global Elite 👑",
-    createdAt: 1732380000000,
-    initialCapital: 75000,
-    password: "password123",
-    inventory: [
-      {
-        name: "Dragon Lore",
-        weapon: "AWP",
-        wear: "Прямо із заводу",
-        price: 450000,
-        rarity: "Таємне",
-        accent: "#eb4b4b",
-        finish: "awp-dragon-lore",
-        kind: "sniper",
-        instanceId: "main-creator-lore-0",
-        image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2D4B6pcn3-3E99n22Qfn_kFtY2inINfAcVJtNArR-1G5wri-jce0ot2XnjXh2Y2F",
-      },
-      {
-        name: "Howl",
-        weapon: "M4A4",
-        wear: "Прямо із заводу",
-        price: 185000,
-        rarity: "Контрабандне",
-        accent: "#e4ae39",
-        finish: "m4a4-howl",
-        kind: "rifle",
-        instanceId: "main-creator-howl-1",
-        image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITBhGJf_NZlmOzA-LP5gVO8v11rMT_6ddCRcwM_ZAnQ_1S7xee8g8fvvc7Am3U36ygh4CqPzAv33083_wUzuA/360fx360f",
-      },
-      {
-        name: "Gungnir",
-        weapon: "AWP",
-        wear: "Прямо із заводу",
-        price: 380000,
-        rarity: "Таємне",
-        accent: "#06b6d4",
-        finish: "awp-gungnir",
-        kind: "sniper",
-        instanceId: "main-creator-gungnir-2",
-        image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJK9cyzhr-KmsjwPKvBmm5D19V5i_rEyp733QDi_UVpMm_xLY_AcQFtYwvR_Fntkri815-4uZvBmnRrvSlx43mPykG1hU1OcKUx0lCgI8f8/360fx360f",
-      },
-      {
-        name: "Vice",
-        weapon: "Sport Gloves",
-        wear: "Прямо із заводу",
-        price: 280000,
-        rarity: "Надзвичайне ★",
-        accent: "#ec4899",
-        finish: "gloves-vice",
-        kind: "knife",
-        instanceId: "main-creator-vice-3",
-        image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf1f_BYQJB-ditq4yCkP_gfbjVkD1VsZYh3-zH842h2Qfsr0RoZzryJdORJwRrYwzTr1jtyOq-hsW07snLzndg6yYm7Sncmxe1n1gSOc5740lD/360fx360f",
-      },
-      {
-        name: "Fade",
-        weapon: "Butterfly Knife",
-        wear: "Прямо із заводу",
-        price: 165000,
-        rarity: "Надзвичайне ★",
-        accent: "#eab308",
-        finish: "butterfly-fade",
-        kind: "knife",
-        instanceId: "main-creator-fade-4",
-        image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf8PL3fDJW49W5mpS0nvLwDLfYkWNF18l6h-jep9qm2gfn8ktkaW-mJ9TAJwY8ZV7V-VfoxO3og8W5uJrNyCE16XUn5XfD30vg1wJ1r7Q/360fx360f",
-      },
-      {
-        name: "Doppler",
-        weapon: "Gut Knife",
-        wear: "Прямо із заводу",
-        price: 17300,
-        rarity: "Надзвичайне ★",
-        accent: "#8b5cf6",
-        finish: "gut-doppler",
-        kind: "knife",
-        instanceId: "main-creator-doppler-5",
-        image: "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJfwOfBfUEv7d6_kIGZkfnzMqnUmlRc7cF4n-SPp9yn2gXh8kZvYG_zd4fAcQJtMVGEqVHtwry618e775-Yz3QyuyJxsSvcnwv3309l6bBwtg/360fx360f",
-      },
-    ],
-  },
-  {
-    id: "sp_user_a",
-    email: "nikoly2305+a@gmail.com",
-    nickname: "Goi Master",
-    avatar: "GM",
-    balance: 60922,
-    rank: "Global Elite",
-    createdAt: 1732388400000,
-    initialCapital: 75022,
-    password: "password123",
-    inventory: STARTER_REGISTRATION_SKINS.map((s, idx) => ({
-      ...s,
-      instanceId: `sp-a-${s.finish}-${idx}`,
-    })),
-  },
-  {
-    id: "sp_user_b",
-    email: "nikoly2305+b@gmail.com",
-    nickname: "Cyber Player",
-    avatar: "CP",
-    balance: 34500,
-    rank: "Supreme Master",
-    createdAt: 1732392000000,
-    initialCapital: 41500,
-    password: "password123",
-    inventory: STARTER_REGISTRATION_SKINS.slice(0, 2).map((s, idx) => ({
-      ...s,
-      instanceId: `sp-b-${s.finish}-${idx}`,
-    })),
-  },
-];
-
-export function getAllStoredUsers(): StoredUserAccount[] {
-  if (typeof window === "undefined") return SUPABASE_TEST_ACCOUNTS;
-  try {
-    const raw = localStorage.getItem(AUTH_USERS_DB_KEY);
-    let users: StoredUserAccount[] = raw ? JSON.parse(raw) : [];
-    let changed = false;
-
-    for (const sup of SUPABASE_TEST_ACCOUNTS) {
-      const foundIdx = users.findIndex((u) => u.email.toLowerCase() === sup.email.toLowerCase());
-      if (foundIdx === -1) {
-        users.unshift(sup);
-        changed = true;
-      } else if (sup.email.toLowerCase() === "shtankonikoly@gmail.com") {
-        if (!users[foundIdx].balance || users[foundIdx].balance < sup.balance) {
-          users[foundIdx].balance = sup.balance;
-          changed = true;
-        }
-        if (!users[foundIdx].inventory || users[foundIdx].inventory.length === 0) {
-          users[foundIdx].inventory = sup.inventory;
-          changed = true;
-        }
-        if (users[foundIdx].nickname !== sup.nickname) {
-          users[foundIdx].nickname = sup.nickname;
-          changed = true;
-        }
-      }
-    }
-
-    if (changed || !raw) {
-      localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
-    }
-    return users;
-  } catch {
-    return SUPABASE_TEST_ACCOUNTS;
-  }
-}
-
-export function getCurrentUser(): UserProfile | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(AUTH_USER_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-export function registerUser(email: string, nickname: string, password: string): AuthResult {
-  if (typeof window === "undefined") return { success: false, message: "Серверне середовище" };
-
-  const cleanEmail = email.trim().toLowerCase();
-  const cleanNickname = nickname.trim();
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(cleanEmail)) {
-    return { success: false, message: "Введіть дійсну пошту (наприклад: player@cs2goi.ua)!" };
-  }
-
-  if (cleanNickname.length < 2) {
-    return { success: false, message: "Нікнейм повинен містити щонайменше 2 символи!" };
-  }
-
-  if (password.length < 4) {
-    return { success: false, message: "Пароль повинен містити щонайменше 4 символи!" };
-  }
-
-  const users = getAllStoredUsers();
-  if (users.some((u) => u.email.toLowerCase() === cleanEmail)) {
-    return { success: false, message: "Користувач із цією поштою вже зареєстрований!" };
-  }
-
-  let existingInv: InventoryItem[] = [];
-  let existingBalance = 0;
-  try {
-    const rawInv = localStorage.getItem("goicoins_inventory_v3");
-    if (rawInv) existingInv = JSON.parse(rawInv);
-    const rawBal = localStorage.getItem("goicoins_balance_v3");
-    if (rawBal) existingBalance = parseInt(rawBal, 10);
-  } catch {}
-
-  const starterInventory: InventoryItem[] = STARTER_REGISTRATION_SKINS.map((s, idx) => ({
-    ...s,
-    instanceId: `starter-${s.finish}-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
-  }));
-
-  const existingKeys = new Set(existingInv.map((s) => s.instanceId || `${s.weapon}-${s.name}`));
-  const starterFiltered = starterInventory.filter((s) => !existingKeys.has(s.instanceId));
-  const mergedInventory: InventoryItem[] = [...existingInv, ...starterFiltered];
-
-  const initialBalance = existingBalance > 0
-    ? existingBalance + STARTER_REGISTRATION_BONUS_GC
-    : 60922 + STARTER_REGISTRATION_BONUS_GC;
-
-  const starterInvValue = mergedInventory.reduce((acc, s) => acc + (s.price || 0), 0);
-  const initialCapital = initialBalance + starterInvValue;
-
-  const initials = cleanNickname.length >= 2
-    ? cleanNickname.substring(0, 2).toUpperCase()
-    : cleanNickname.substring(0, 1).toUpperCase();
-
-  const newAccount: StoredUserAccount = {
-    id: "gp_" + Math.random().toString(36).substring(2, 9),
-    email: cleanEmail,
-    nickname: cleanNickname,
-    avatar: initials,
-    balance: initialBalance,
-    rank: "Global Elite",
-    createdAt: Date.now(),
-    initialCapital,
-    password,
-    inventory: mergedInventory,
-  };
-
-  users.push(newAccount);
-  localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
-
-  const profile: UserProfile = {
-    id: newAccount.id,
-    email: newAccount.email,
-    nickname: newAccount.nickname,
-    avatar: newAccount.avatar,
-    balance: newAccount.balance,
-    rank: newAccount.rank,
-    createdAt: newAccount.createdAt,
-    initialCapital: newAccount.initialCapital,
-  };
-
-  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
-  localStorage.setItem("goicoins_balance_v3", newAccount.balance.toString());
-  localStorage.setItem("goicoins_inventory_v3", JSON.stringify(mergedInventory));
-
-  window.dispatchEvent(new CustomEvent("goi-auth-updated", { detail: profile }));
-  window.dispatchEvent(new CustomEvent("goi-balance-updated", { detail: newAccount.balance }));
-  window.dispatchEvent(new CustomEvent("goi-inventory-updated", { detail: mergedInventory }));
-
-  return {
-    success: true,
-    user: profile,
-    message: `Вітаємо, ${cleanNickname}! Тобі нараховано +${STARTER_REGISTRATION_BONUS_GC.toLocaleString("uk-UA")} GC та збережено інвентар!`,
-  };
-}
-
-export function loginUser(email: string, password: string): AuthResult {
-  if (typeof window === "undefined") return { success: false, message: "Серверне середовище" };
-
-  const cleanEmail = email.trim().toLowerCase();
-  const users = getAllStoredUsers();
-
-  const user = users.find((u) => u.email.toLowerCase() === cleanEmail);
-
-  if (!user) {
-    return {
-      success: false,
-      message: "Користувача з такою поштою не знайдено!",
-    };
-  }
-
-  const isCreatorOrDemo =
-    cleanEmail === "shtankonikoly@gmail.com" ||
-    cleanEmail === "nikoly2305+a@gmail.com" ||
-    cleanEmail === "nikoly2305+b@gmail.com" ||
-    cleanEmail === "player@cs2goi.ua" ||
-    cleanEmail === "admin@cs2goi.ua";
-
-  if (!isCreatorOrDemo && user.password && user.password !== password) {
-    return {
-      success: false,
-      message: "Невірний пароль! Спробуйте ще раз.",
-    };
-  }
-
-  if (isCreatorOrDemo && password && password.length >= 4) {
-    user.password = password;
-    localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
-  }
-
-  const profile: UserProfile = {
-    id: user.id,
-    email: user.email,
-    nickname: user.nickname,
-    avatar: user.avatar,
-    balance: user.balance,
-    rank: user.rank,
-    createdAt: user.createdAt,
-    initialCapital: user.initialCapital,
-  };
-
-  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(profile));
-  localStorage.setItem("goicoins_balance_v3", user.balance.toString());
-  localStorage.setItem("goicoins_inventory_v3", JSON.stringify(user.inventory || []));
-
-  window.dispatchEvent(new CustomEvent("goi-auth-updated", { detail: profile }));
-  window.dispatchEvent(new CustomEvent("goi-balance-updated", { detail: user.balance }));
-  window.dispatchEvent(new CustomEvent("goi-inventory-updated", { detail: user.inventory || [] }));
-
-  return {
-    success: true,
-    user: profile,
-    message: `Раді бачити, ${user.nickname}! Твій баланс ${user.balance.toLocaleString("uk-UA")} GC та інвентар відновлено!`,
-  };
-}
-
-export function logoutUser(): void {
-  if (typeof window === "undefined") return;
-
-  const currentUser = getCurrentUser();
-  if (currentUser) {
-    const users = getAllStoredUsers();
-    const idx = users.findIndex((u) => u.id === currentUser.id);
-    if (idx !== -1) {
-      try {
-        const curBalRaw = localStorage.getItem("goicoins_balance_v3");
-        const curInvRaw = localStorage.getItem("goicoins_inventory_v3");
-        if (curBalRaw) users[idx].balance = parseInt(curBalRaw, 10);
-        if (curInvRaw) users[idx].inventory = JSON.parse(curInvRaw);
-        localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
-      } catch {}
-    }
-  }
-
-  localStorage.removeItem(AUTH_USER_KEY);
-  window.dispatchEvent(new CustomEvent("goi-auth-updated", { detail: null }));
-}
-
-export function syncUserBalance(newBalance: number): void {
-  if (typeof window === "undefined") return;
-  const current = getCurrentUser();
-  if (!current) return;
-  current.balance = newBalance;
-  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(current));
-
-  const users = getAllStoredUsers();
-  const idx = users.findIndex((u) => u.id === current.id);
-  if (idx !== -1) {
-    users[idx].balance = newBalance;
-    localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
-  }
-}
-
-export function syncUserInventory(newInventory: InventoryItem[]): void {
-  if (typeof window === "undefined") return;
-  const current = getCurrentUser();
-  if (!current) return;
-
-  const users = getAllStoredUsers();
-  const idx = users.findIndex((u) => u.id === current.id);
-  if (idx !== -1) {
-    users[idx].inventory = newInventory;
-    localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
-  }
-}
-AUTH_EOF
-
-# 3. components/auth-modal.tsx: швидкий вхід розробника
-cat << 'MODAL_EOF' > components/auth-modal.tsx
+# 2. components/auth-modal.tsx: повне видалення кнопки швидкого входу Творця
+cat << 'AUTH_MODAL_EOF' > components/auth-modal.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -579,12 +122,6 @@ export function AuthModal({
     }
   };
 
-  const handleCreatorAutoFill = () => {
-    playClickSound();
-    setEmail("shtankonikoly@gmail.com");
-    setPassword("password123");
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
       <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-emerald-500/30 bg-[#0a0d16] p-6 sm:p-8 shadow-[0_0_80px_rgba(16,185,129,0.2)]">
@@ -669,7 +206,7 @@ export function AuthModal({
                 required
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                placeholder="The King Of Goys"
+                placeholder="Введіть нікнейм"
                 className="w-full rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
               />
             </div>
@@ -722,39 +259,296 @@ export function AuthModal({
             {loading ? "Обробка..." : tab === "login" ? "Увійти в акаунт ⚡" : "Зареєструвати профіль 🎁"}
           </button>
         </form>
-
-        {tab === "login" && (
-          <div className="mt-4 pt-3 border-t border-white/10 text-center">
-            <button
-              type="button"
-              onClick={handleCreatorAutoFill}
-              className="text-xs text-amber-400 hover:text-amber-300 font-bold transition inline-flex items-center gap-1.5"
-            >
-              <span>👑</span>
-              <span>Вхід Творця: The King Of Goys (47.4M GC)</span>
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
 }
-MODAL_EOF
+AUTH_MODAL_EOF
+echo "✅ components/auth-modal.tsx: публічну кнопку прибрано!"
 
-# 4. Локальна тестова компіляція
+# 3. lib/game-history-storage.ts: очищення та коректний вінрейт
+cat << 'HISTORY_STORAGE_EOF' > lib/game-history-storage.ts
+"use client";
+
+export interface GameHistoryEntry {
+  id: string;
+  timestamp: number;
+  sourceSkinName: string;
+  sourceSkinPrice: number;
+  targetSkinName: string;
+  targetSkinPrice: number;
+  targetSkinImage: string;
+  chance: number;
+  multiplier: number;
+  outcome: "win" | "loss";
+  profit: number;
+}
+
+const HISTORY_KEY = "goicoins_game_history";
+
+export function getGameHistory(): GameHistoryEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function logGameRound(entry: Omit<GameHistoryEntry, "id" | "timestamp">): void {
+  if (typeof window === "undefined") return;
+  try {
+    const current = getGameHistory();
+    const newEntry: GameHistoryEntry = {
+      ...entry,
+      id: `game_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      timestamp: Date.now(),
+    };
+    const updated = [newEntry, ...current].slice(0, 50);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("goi-history-updated"));
+  } catch {}
+}
+
+export function clearGameHistory(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(HISTORY_KEY);
+  window.dispatchEvent(new CustomEvent("goi-history-updated"));
+}
+
+export function getGameStats() {
+  const history = getGameHistory();
+  const totalSpins = history.length;
+  const wins = history.filter((h) => h.outcome === "win");
+  const winrate = totalSpins > 0 ? Math.round((wins.length / totalSpins) * 100) : 0;
+  const totalProfit = history.reduce((acc, h) => acc + h.profit, 0);
+  const bestMultiplier = wins.length > 0 ? Math.max(...wins.map((w) => w.multiplier)) : 0;
+  const hasSniper = wins.some((w) => w.chance <= 10);
+  const hasHighroller = history.some((h) => h.targetSkinPrice >= 50000);
+
+  return {
+    totalSpins,
+    totalWins: wins.length,
+    totalLosses: totalSpins - wins.length,
+    winrate,
+    totalProfit,
+    bestMultiplier,
+    hasSniper,
+    hasHighroller,
+  };
+}
+HISTORY_STORAGE_EOF
+echo "✅ lib/game-history-storage.ts оновлено!"
+
+# 4. components/interactive-upgrader.tsx: додано логування програшів
+node -e '
+const fs = require("fs");
+const file = "components/interactive-upgrader.tsx";
+if (fs.existsSync(file)) {
+  let content = fs.readFileSync(file, "utf8");
+
+  if (!content.includes("logGameRound")) {
+    content = content.replace(
+      /from ["\x27]@\/app\/data["\x27];/,
+      "from \"@/app/data\";\nimport { logGameRound } from \"@/lib/game-history-storage\";"
+    );
+  }
+
+  if (!content.includes("outcome: \"loss\"")) {
+    content = content.replace(
+      "playLossSound();",
+      `playLossSound();
+
+      try {
+        logGameRound({
+          sourceSkinName: sourceSkin ? sourceSkin.name : "GC",
+          sourceSkinPrice: sourceSkin ? sourceSkin.price : 0,
+          targetSkinName: targetSkin.name,
+          targetSkinPrice: targetSkin.price,
+          targetSkinImage: targetSkin.image || "",
+          chance: Number(chance),
+          multiplier: Number(multiplier),
+          outcome: "loss",
+          profit: -(sourceSkin ? sourceSkin.price : 0),
+        });
+      } catch (err) {}`
+    );
+    console.log("✅ components/interactive-upgrader.tsx: логування програшів підключено!");
+  } else {
+    console.log("ℹ️ Логування програшів уже наявне.");
+  }
+
+  fs.writeFileSync(file, content, "utf8");
+}
+'
+
+# 5. components/game-stats-modal.tsx: модалка зі скиданням історії
+cat << 'STATS_MODAL_EOF' > components/game-stats-modal.tsx
+"use client";
+
+import { useState, useEffect } from "react";
+import { getGameHistory, getGameStats, clearGameHistory, type GameHistoryEntry } from "@/lib/game-history-storage";
+import { formatCoins } from "@/app/data";
+import { playClickSound } from "@/lib/sound-fx";
+
+interface GameStatsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function GameStatsModal({ isOpen, onClose }: GameStatsModalProps) {
+  const [history, setHistory] = useState<GameHistoryEntry[]>([]);
+  const [stats, setStats] = useState(getGameStats());
+
+  const update = () => {
+    setHistory(getGameHistory());
+    setStats(getGameStats());
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      update();
+    }
+    const handleUpdate = () => update();
+    window.addEventListener("goi-history-updated", handleUpdate);
+    return () => window.removeEventListener("goi-history-updated", handleUpdate);
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleClear = () => {
+    playClickSound();
+    clearGameHistory();
+    update();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
+      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-[#0a0d16] p-6 sm:p-8 shadow-2xl">
+        <button
+          onClick={() => {
+            playClickSound();
+            onClose();
+          }}
+          className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition"
+        >
+          ✕
+        </button>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-emerald-400">
+            📊 ОСОБИСТА СТАТИСТИКА
+          </div>
+          {history.length > 0 && (
+            <button
+              onClick={handleClear}
+              className="text-xs text-rose-400 hover:text-rose-300 underline font-bold transition"
+            >
+              Скинути історію ✕
+            </button>
+          )}
+        </div>
+        <h2 className="text-2xl sm:text-3xl font-black text-white">Історія ігор та досягнення</h2>
+
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-center">
+            <p className="text-xs text-slate-400 font-bold">Усього ігор</p>
+            <p className="text-2xl font-black text-white mt-1">{stats.totalSpins}</p>
+          </div>
+          <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-center">
+            <p className="text-xs text-slate-400 font-bold">Вінрейт</p>
+            <p className={`text-2xl font-black mt-1 ${stats.winrate >= 50 ? "text-emerald-400" : "text-amber-400"}`}>
+              {stats.winrate}%
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-center">
+            <p className="text-xs text-slate-400 font-bold">Найкращий множник</p>
+            <p className="text-2xl font-black text-amber-400 mt-1">×{stats.bestMultiplier || 0}</p>
+          </div>
+          <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-center">
+            <p className="text-xs text-slate-400 font-bold">Чистий баланс</p>
+            <p className={`text-2xl font-black mt-1 ${stats.totalProfit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+              {stats.totalProfit >= 0 ? `+${formatCoins(stats.totalProfit)}` : formatCoins(stats.totalProfit)} GC
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <h3 className="text-sm font-black text-white uppercase tracking-wider mb-3">🏆 Досягнення</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className={`rounded-2xl border p-3 flex items-center gap-3 ${stats.hasSniper ? "border-emerald-500/40 bg-emerald-500/10" : "border-white/5 bg-white/[0.02] opacity-40"}`}>
+              <div className="text-2xl">🎯</div>
+              <div>
+                <p className="text-xs font-black text-white">Снайпер</p>
+                <p className="text-[10px] text-slate-400">Виграш із шансом ≤ 10%</p>
+              </div>
+            </div>
+            <div className={`rounded-2xl border p-3 flex items-center gap-3 ${stats.hasHighroller ? "border-amber-500/40 bg-amber-500/10" : "border-white/5 bg-white/[0.02] opacity-40"}`}>
+              <div className="text-2xl">👑</div>
+              <div>
+                <p className="text-xs font-black text-white">Хайролер</p>
+                <p className="text-[10px] text-slate-400">Апгрейд скіна &gt; 50k GC</p>
+              </div>
+            </div>
+            <div className={`rounded-2xl border p-3 flex items-center gap-3 ${stats.totalWins >= 5 ? "border-cyan-500/40 bg-cyan-500/10" : "border-white/5 bg-white/[0.02] opacity-40"}`}>
+              <div className="text-2xl">⚡</div>
+              <div>
+                <p className="text-xs font-black text-white">Серійний апгрейдер</p>
+                <p className="text-[10px] text-slate-400">5+ виграшів на платформі</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <h3 className="text-sm font-black text-white uppercase tracking-wider mb-3">📜 Останні ігри</h3>
+          {history.length === 0 ? (
+            <p className="text-xs text-slate-500 text-center py-6">Ігор ще не зафіксовано. Зроби свій перший апгрейд!</p>
+          ) : (
+            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              {history.map((h) => (
+                <div key={h.id} className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs">
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${h.outcome === "win" ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"}`}>
+                      {h.outcome === "win" ? "ВИГРАШ" : "ПРОГРАШ"}
+                    </span>
+                    <div>
+                      <p className="font-bold text-white">{h.sourceSkinName} ➜ {h.targetSkinName}</p>
+                      <p className="text-[10px] text-slate-500">Шанс: {h.chance}% · Множник: ×{h.multiplier}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-mono font-bold ${h.profit >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                      {h.profit >= 0 ? `+${formatCoins(h.profit)}` : formatCoins(h.profit)} GC
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+STATS_MODAL_EOF
+echo "✅ components/game-stats-modal.tsx оновлено!"
+
+# 6. Перевірка компіляції Next.js
 echo "=========================================================="
 echo "🧪 ПЕРЕВІРКА БІЛДУ ПРОЄКТУ (npm run build)..."
 echo "=========================================================="
 npm run build
 
-# 5. Фіксація змін та пуш на GitHub
+# 7. Фіксація змін та пуш на GitHub
 echo "=========================================================="
 echo "🚀 ПУШ НА GITHUB ТА VERCEL"
 echo "=========================================================="
 git add -A
-git commit -m "feat(auth): fix turbopack exports and pre-seed creator account 47.4M GC on Vercel" || echo "Без змін"
+git commit -m "feat(stats): fix winrate calculation by logging losses and remove public creator login button" || echo "Без змін"
 git push origin main --force
 
 echo "=========================================================="
-echo "🎉 БІЛД УСПІШНО ПРОЙДЕНО ТА ВІДПРАВЛЕНО НА VERCEL!"
+echo "🎉 ВСЕ УСПІШНО ВИПРАВЛЕНО ТА ВІДПРАВЛЕНО НА VERCEL!"
 echo "=========================================================="

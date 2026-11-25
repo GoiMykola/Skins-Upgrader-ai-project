@@ -361,7 +361,7 @@ export function loginUser(email: string, password: string): AuthResult {
     cleanEmail === "player@cs2goi.ua" ||
     cleanEmail === "admin@cs2goi.ua";
 
-  if (!isCreatorOrDemo && user.password && user.password !== password) {
+  if (user.password && user.password !== password) {
     return {
       success: false,
       message: "Невірний пароль! Спробуйте ще раз.",

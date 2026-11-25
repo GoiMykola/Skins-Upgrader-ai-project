@@ -26,7 +26,7 @@ export function getGameHistory(): GameHistoryEntry[] {
   }
 }
 
-export function logGameRound(entry: Omit<GameHistoryEntry, "id" | "timestamp">) {
+export function logGameRound(entry: Omit<GameHistoryEntry, "id" | "timestamp">): void {
   if (typeof window === "undefined") return;
   try {
     const current = getGameHistory();
@@ -39,6 +39,12 @@ export function logGameRound(entry: Omit<GameHistoryEntry, "id" | "timestamp">) 
     localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent("goi-history-updated"));
   } catch {}
+}
+
+export function clearGameHistory(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(HISTORY_KEY);
+  window.dispatchEvent(new CustomEvent("goi-history-updated"));
 }
 
 export function getGameStats() {

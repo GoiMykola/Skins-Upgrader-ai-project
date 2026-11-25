@@ -547,6 +547,20 @@ export function InteractiveUpgrader() {
 
     } else {
       playLossSound();
+
+      try {
+        logGameRound({
+          sourceSkinName: sourceSkin ? sourceSkin.name : "GC",
+          sourceSkinPrice: sourceSkin ? sourceSkin.price : 0,
+          targetSkinName: targetSkin.name,
+          targetSkinPrice: targetSkin.price,
+          targetSkinImage: targetSkin.image || "",
+          chance: Number(chance),
+          multiplier: Number(multiplier),
+          outcome: "loss",
+          profit: -(sourceSkin ? sourceSkin.price : 0),
+        });
+      } catch (err) {}
       if (sourceSkin && sourceSkin.instanceId) {
         const remaining = removeSkinFromInventory(sourceSkin.instanceId);
         setUserInventory(remaining);
