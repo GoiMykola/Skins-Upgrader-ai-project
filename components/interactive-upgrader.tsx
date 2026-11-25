@@ -4,6 +4,11 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import type { Skin, MarketSkin } from "@/app/data";
+import { addLiveDrop } from "@/lib/live-drops-storage";
+import { isGodModeActive } from "@/lib/admin-vault-storage";
+import { triggerConfetti, playJackpotSound } from "@/lib/confetti";
+import { logGameRound } from "@/lib/game-history-storage";
+import { getCurrentUser } from "@/lib/auth-storage";
 import { formatCoins, skins, marketSkinToSkin } from "@/app/data";
 import SkinArt from "@/app/components/skin-art";
 import {
@@ -103,6 +108,7 @@ export function InteractiveUpgrader() {
 
   // Модалка вибору ЦІЛІ з ринку CS2 (2 246 скінів)
   const [marketSkins, setMarketSkins] = useState<MarketSkin[]>([]);
+  const [isLoadingMarket, setIsLoadingMarket] = useState(false);
   const [isMarketPickerOpen, setIsMarketPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerCategory, setPickerCategory] = useState("all");
@@ -149,10 +155,42 @@ export function InteractiveUpgrader() {
       }
     } catch {}
 
-    fetch("/data/cs2-market.json").then(r => r.text()).then(t => t.trim().startsWith("<") ? fetch("/api/market").then(r=>r.json()) : JSON.parse(t))
-      .then((res) => res.json())
-      .then((data) => setMarketSkins(data))
-      .catch(() => {});
+    async function loadMarket() {
+      setIsLoadingMarket(true);
+      try {
+        let text = "";
+        let res = await fetch("/data/cs2-market.json");
+        if (res.ok) text = await res.text();
+        if (!text || text.trim().startsWith("<")) {
+          res = await fetch("/api/market");
+          if (res.ok) text = await res.text();
+        }
+        if (text && !text.trim().startsWith("<")) {
+          const data = JSON.parse(text);
+          if (Array.isArray(data) && data.length > 0) {
+            setMarketSkins(data);
+            setIsLoadingMarket(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Помилка завантаження cs2-market:", err);
+      }
+      const fallbackList: MarketSkin[] = skins.map((s, idx) => ({
+        id: `fb_${s.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}_${idx}`,
+        name: s.name,
+        weapon: s.weapon,
+        fullName: `${s.weapon} | ${s.name}`,
+        price: s.price,
+        image: s.image,
+        category: (s.kind === "knife" ? "knives" : s.kind === "sniper" ? "snipers" : s.kind === "pistol" ? "pistols" : "rifles") as any,
+        rarityUk: s.rarity || "Таємне",
+        rarityColor: s.accent || "#eb4b4b",
+      }));
+      setMarketSkins(fallbackList);
+      setIsLoadingMarket(false);
+    }
+    loadMarket();
 
     const handleInvUpdate = (e: CustomEvent<InventoryItem[]>) => {
       if (e.detail) {
@@ -446,6 +484,42 @@ export function InteractiveUpgrader() {
 
     if (isWin) {
       playWinSound();
+
+      if (chance <= 20 || targetSkin.price >= 30000) {
+        triggerConfetti();
+        playJackpotSound();
+      }
+
+      try {
+        logGameRound({
+          sourceSkinName: sourceSkin ? sourceSkin.name : "GC",
+          sourceSkinPrice: sourceSkin ? sourceSkin.price : 0,
+          targetSkinName: targetSkin.name,
+          targetSkinPrice: targetSkin.price,
+          targetSkinImage: targetSkin.image || "",
+          chance: Number(chance),
+          multiplier: Number(multiplier),
+          outcome: "win",
+          profit: targetSkin.price - (sourceSkin ? sourceSkin.price : 0),
+        });
+      } catch (err) {}
+
+      try {
+        const u = getCurrentUser();
+        addLiveDrop({
+          playerName: u?.nickname || "The King Of Goys",
+          playerAvatar: u?.avatar || "TH",
+          playerRank: u?.rank || "Global Elite",
+          weapon: targetSkin.weapon,
+          name: targetSkin.name,
+          price: targetSkin.price,
+          image: targetSkin.image || "",
+          accent: targetSkin.accent || "#10b981",
+          rarity: targetSkin.rarity || "Таємне",
+          chance: `${chance}%`,
+          multiplier: `×${multiplier}`,
+        });
+      } catch (err) {}
       
       // Справжній CS2 Trade-In: старий скін зникає, новий додається
       let updatedInv: InventoryItem[] = [];
@@ -518,7 +592,7 @@ export function InteractiveUpgrader() {
                   }}
                   disabled={isSpinning}
                   title={cfg.description}
-                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                  className={`flex items-center gap-1 rounded-lg px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-black transition ${
                     isActive
                       ? isSuspense
                         ? "bg-amber-500 text-[#1a1005] shadow-lg shadow-amber-500/30 font-black animate-pulse"
@@ -741,7 +815,7 @@ export function InteractiveUpgrader() {
                 key={`mult-btn-${m}`}
                 onClick={() => handleMultiplierSelect(m)}
                 disabled={isSpinning || !sourceSkin}
-                className={`rounded-lg px-2.5 sm:px-3 py-1 font-mono text-xs font-bold transition disabled:opacity-40 ${
+                className={`rounded-lg px-4 sm:px-5 py-2 sm:py-2.5 font-mono text-xs sm:text-sm font-black transition disabled:opacity-40 ${
                   spinMode === "suspense"
                     ? "text-amber-300/80 hover:bg-amber-500/20 hover:text-amber-200"
                     : "text-slate-400 hover:bg-emerald-500/10 hover:text-emerald-300"
@@ -816,7 +890,7 @@ export function InteractiveUpgrader() {
         <button
           onClick={handleUpgrade}
           disabled={isSpinning || isDowngrade || !sourceSkin}
-          className={`w-full max-w-xl rounded-2xl py-4 text-base font-black uppercase tracking-wider transition shadow-2xl active:scale-[0.99] ${
+          className={`w-full max-w-2xl rounded-3xl py-5 sm:py-6 text-lg sm:text-xl font-black uppercase tracking-wider transition shadow-2xl active:scale-[0.99] ${
             isSpinning
               ? "cursor-not-allowed bg-slate-800 text-slate-500 border border-white/5"
               : !sourceSkin
@@ -966,7 +1040,7 @@ export function InteractiveUpgrader() {
                       playClickSound();
                       setPickerPriceRange(tier.id);
                     }}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition shrink-0 ${
+                    className={`rounded-lg px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-black transition shrink-0 ${
                       pickerPriceRange === tier.id
                         ? "bg-emerald-500 text-[#05130d] font-black"
                         : "border border-white/5 bg-white/5 text-slate-400 hover:text-white"
@@ -994,7 +1068,7 @@ export function InteractiveUpgrader() {
                       playClickSound();
                       setPickerCategory(c.id);
                     }}
-                    className={`rounded-lg px-3 py-1 text-xs font-bold transition ${
+                    className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-bold transition ${
                       pickerCategory === c.id
                         ? "bg-emerald-500 text-[#05130d] font-black"
                         : "border border-white/5 bg-white/5 text-slate-400 hover:text-white"

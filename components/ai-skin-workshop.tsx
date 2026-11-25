@@ -61,7 +61,6 @@ export function AiSkinWorkshop({ isConfigured = true }: { isConfigured?: boolean
         Опиши концепт, візуал чи тематику скіна — штучний інтелект згенерує характеристики за правилами CS та додасть скін до каталогу.
       </p>
 
-      {/* Швидкі пресети ідей */}
       <div className="mt-4">
         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
           Швидкі ідеї для натхнення:
@@ -83,7 +82,6 @@ export function AiSkinWorkshop({ isConfigured = true }: { isConfigured?: boolean
         </div>
       </div>
 
-      {/* Форма генерації */}
       <div className="mt-6">
         <ActionForm action={createAiSkinAction}>
           <div className="flex flex-col sm:flex-row gap-3">

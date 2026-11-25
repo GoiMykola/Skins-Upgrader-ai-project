@@ -261,54 +261,6 @@ export default function TopUpPage() {
         </div>
       </div>
 
-      {/* Тестовий Faucet симулятора */}
-      <div className="rounded-3xl border border-white/[0.08] bg-[#0e111a] p-6 sm:p-8 shadow-xl">
-        <div className="mb-4">
-          <h3 className="text-lg font-black text-white">🧪 Тестовий симуляторний Faucet</h3>
-          <p className="text-xs text-slate-400">
-            Оскільки це академічний симулятор без реальних грошей, ти можеш миттєво нарахувати будь-яку суму для тестування механіки апгрейдів.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <button
-            onClick={() => handleInstantFaucet(2000, "+2k GC")}
-            className="rounded-2xl border border-white/10 bg-white/5 hover:bg-emerald-500/20 hover:border-emerald-500/30 p-4 text-center transition group"
-          >
-            <p className="text-xs text-slate-400">Стартовий</p>
-            <p className="font-mono text-lg font-black text-white group-hover:text-emerald-300 transition">
-              +2 000 GC
-            </p>
-          </button>
-          <button
-            onClick={() => handleInstantFaucet(10000, "+10k GC")}
-            className="rounded-2xl border border-white/10 bg-white/5 hover:bg-emerald-500/20 hover:border-emerald-500/30 p-4 text-center transition group"
-          >
-            <p className="text-xs text-slate-400">Середній</p>
-            <p className="font-mono text-lg font-black text-white group-hover:text-emerald-300 transition">
-              +10 000 GC
-            </p>
-          </button>
-          <button
-            onClick={() => handleInstantFaucet(50000, "+50k GC")}
-            className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 p-4 text-center transition group"
-          >
-            <p className="text-xs text-emerald-300">Хайроллер</p>
-            <p className="font-mono text-lg font-black text-emerald-400 group-hover:scale-105 transition">
-              +50 000 GC
-            </p>
-          </button>
-          <button
-            onClick={() => handleInstantFaucet(200000, "+200k GC")}
-            className="rounded-2xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 p-4 text-center transition group"
-          >
-            <p className="text-xs text-amber-300">Кібер-Магнат</p>
-            <p className="font-mono text-lg font-black text-amber-400 group-hover:scale-105 transition">
-              +200 000 GC
-            </p>
-          </button>
-        </div>
       </div>
-    </div>
   );
 }

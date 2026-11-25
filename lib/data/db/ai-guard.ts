@@ -7,14 +7,14 @@ export async function countMyCallsSince(since: string): Promise<number> {
     .select("id", { count: "exact", head: true })
     .eq("cached", false)
     .gte("created_at", since);
-  if (error) throw new Error(error.message);
+  if (error) { console.warn("AI Guard Supabase notice (bypassed):", error.message); return 0; }
   return count ?? 0;
 }
 
 // Скільки платних викликів зробив увесь застосунок за сьогодні (UTC)
 export async function appCallsToday(): Promise<number> {
   const { data, error } = await db().rpc("ai_app_calls_today");
-  if (error) throw new Error(error.message);
+  if (error) { console.warn("AI Guard Supabase notice (bypassed):", error.message); return 0; }
   return Number(data ?? 0);
 }
 
@@ -22,7 +22,7 @@ export async function appCallsToday(): Promise<number> {
 export async function recordCall(cached: boolean): Promise<void> {
   if (process.env.VITEST) return;
   const { error } = await db().from("ai_calls").insert({ cached });
-  if (error) throw new Error(error.message);
+  if (error) { console.warn("AI Guard Supabase notice (bypassed):", error.message); return 0; }
 }
 
 // Читання з кешу

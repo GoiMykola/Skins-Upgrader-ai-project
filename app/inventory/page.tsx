@@ -136,13 +136,7 @@ export default function InventoryPage() {
                   {balance.toLocaleString("uk-UA")} GC
                 </p>
               </div>
-              <Link
-                href="/topup"
-                title="Поповнити баланс (+)"
-                className="flex size-8 items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#05130d] font-black text-lg shadow-md shadow-emerald-500/30 hover:scale-105 active:scale-95 transition"
-              >
-                +
-              </Link>
+              
             </div>
             <div className="rounded-2xl border border-white/[0.06] bg-black/40 px-5 py-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Вартість інвентаря</p>

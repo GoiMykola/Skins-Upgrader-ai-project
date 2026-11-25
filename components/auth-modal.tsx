@@ -102,39 +102,45 @@ export function AuthModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-emerald-500/30 bg-[#0a0d14]/95 p-6 sm:p-8 shadow-[0_0_60px_rgba(16,185,129,0.18)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 bg-black/85 backdrop-blur-lg animate-fade-in overflow-y-auto">
+      {/* Збільшений контейнер: max-w-xl sm:max-w-2xl замість max-w-md */}
+      <div className="relative w-full max-w-xl sm:max-w-2xl overflow-hidden rounded-[32px] border border-emerald-500/40 bg-[#0a0d14]/98 p-8 sm:p-10 md:p-12 shadow-[0_0_80px_rgba(16,185,129,0.22)] my-auto">
+        {/* Кнопка закриття */}
         <button
           onClick={() => {
             playClickSound();
             onClose();
           }}
-          className="absolute right-4 top-4 flex size-8 items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition"
+          className="absolute right-5 top-5 sm:right-6 sm:top-6 flex size-10 sm:size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-400 hover:bg-white/15 hover:text-white transition text-base sm:text-lg font-bold"
           aria-label="Закрити"
         >
           ✕
         </button>
 
+        {/* Шапка модалки */}
         <div className="text-center">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 font-mono text-xl font-black text-[#05130d] shadow-lg shadow-emerald-500/25">
+          <div className="mx-auto flex size-16 sm:size-20 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 font-mono text-3xl sm:text-4xl font-black text-[#05130d] shadow-xl shadow-emerald-500/30">
             G
           </div>
-          <h2 className="mt-3 text-xl font-black text-white">GoiCoins Simulator</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <h2 className="mt-4 text-2xl sm:text-3xl font-black text-white tracking-tight">
+            GoiCoins Simulator
+          </h2>
+          <p className="text-sm sm:text-base text-slate-300 mt-1.5 max-w-md mx-auto">
             {tab === "login"
               ? "Авторизуйтесь для збереження скінів та балансу"
-              : "Створіть свій ігровий профіль та отримайте бонус"}
+              : "Створіть свій ігровий профіль та отримайте бонусний баланс"}
           </p>
         </div>
 
-        <div className="my-5 grid grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-black/40 p-1">
+        {/* Перемикач вкладок */}
+        <div className="my-6 sm:my-8 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/50 p-1.5">
           <button
             type="button"
             onClick={() => handleTabSwitch("login")}
-            className={`rounded-xl py-2 text-xs font-bold transition ${
+            className={`rounded-xl py-3 sm:py-3.5 px-4 text-sm sm:text-base font-black transition ${
               tab === "login"
-                ? "bg-emerald-500 text-[#05130d] shadow-md shadow-emerald-500/20"
-                : "text-slate-400 hover:text-white"
+                ? "bg-emerald-500 text-[#05130d] shadow-lg shadow-emerald-500/25"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
             }`}
           >
             Увійти
@@ -142,31 +148,36 @@ export function AuthModal({
           <button
             type="button"
             onClick={() => handleTabSwitch("register")}
-            className={`rounded-xl py-2 text-xs font-bold transition ${
+            className={`rounded-xl py-3 sm:py-3.5 px-4 text-sm sm:text-base font-black transition ${
               tab === "register"
-                ? "bg-emerald-500 text-[#05130d] shadow-md shadow-emerald-500/20"
-                : "text-slate-400 hover:text-white"
+                ? "bg-emerald-500 text-[#05130d] shadow-lg shadow-emerald-500/25"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
             }`}
           >
             Реєстрація (+2.5k GC) 🎁
           </button>
         </div>
 
+        {/* Повідомлення про помилку */}
         {error && (
-          <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-medium text-rose-400 animate-fade-in">
-            ⚠️ {error}
+          <div className="mb-5 rounded-2xl border border-rose-500/30 bg-rose-500/15 p-4 text-xs sm:text-sm font-bold text-rose-300 animate-fade-in flex items-center gap-2">
+            <span className="text-lg">⚠️</span>
+            <span>{error}</span>
           </div>
         )}
 
+        {/* Повідомлення про успіх */}
         {successMsg && (
-          <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-medium text-emerald-400 animate-fade-in">
-            🎉 {successMsg}
+          <div className="mb-5 rounded-2xl border border-emerald-500/40 bg-emerald-500/15 p-4 text-xs sm:text-sm font-bold text-emerald-300 animate-fade-in flex items-center gap-2">
+            <span className="text-lg">🎉</span>
+            <span>{successMsg}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Форма */}
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 mb-1">
+            <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">
               Електронна пошта
             </label>
             <input
@@ -175,13 +186,13 @@ export function AuthModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="player@cs2goi.ua"
-              className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+              className="w-full rounded-2xl border border-white/10 bg-black/60 px-5 py-3.5 sm:py-4 text-sm sm:text-base text-white placeholder-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none transition"
             />
           </div>
 
           {tab === "register" && (
             <div className="animate-fade-in">
-              <label className="block text-[11px] font-bold text-slate-300 mb-1">
+              <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">
                 Ігровий нікнейм
               </label>
               <input
@@ -189,14 +200,14 @@ export function AuthModal({
                 required
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                placeholder="Введіть свій нікнейм"
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                placeholder="Введіть свій нікнейм (наприклад: CyberKing)"
+                className="w-full rounded-2xl border border-white/10 bg-black/60 px-5 py-3.5 sm:py-4 text-sm sm:text-base text-white placeholder-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none transition"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 mb-1">
+            <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">
               Пароль {tab === "register" && "(мінімум 6 символів)"}
             </label>
             <div className="relative">
@@ -206,12 +217,12 @@ export function AuthModal({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Введіть пароль"
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2 pr-10 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                className="w-full rounded-2xl border border-white/10 bg-black/60 px-5 py-3.5 sm:py-4 pr-12 text-sm sm:text-base text-white placeholder-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none transition"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 flex size-9 items-center justify-center rounded-xl text-base sm:text-lg text-slate-400 hover:text-white transition"
               >
                 {showPassword ? "🙈" : "👁️"}
               </button>
@@ -220,7 +231,7 @@ export function AuthModal({
 
           {tab === "register" && (
             <div className="animate-fade-in">
-              <label className="block text-[11px] font-bold text-slate-300 mb-1">
+              <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 mb-2">
                 Підтвердження пароля
               </label>
               <input
@@ -228,24 +239,29 @@ export function AuthModal({
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Повторіть пароль"
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+                placeholder="Повторіть пароль ще раз"
+                className="w-full rounded-2xl border border-white/10 bg-black/60 px-5 py-3.5 sm:py-4 text-sm sm:text-base text-white placeholder-slate-500 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/30 focus:outline-none transition"
               />
             </div>
           )}
 
+          {/* Велика помітна кнопка відправки */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-2.5 text-xs font-black text-[#05130d] shadow-lg shadow-emerald-500/25 hover:brightness-110 active:scale-[0.99] transition disabled:opacity-50 mt-2"
+            className="w-full rounded-2xl bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500 py-4 sm:py-4.5 text-base sm:text-lg font-black text-[#05130d] shadow-xl shadow-emerald-500/30 hover:brightness-110 active:scale-[0.99] transition disabled:opacity-50 mt-4 cursor-pointer"
           >
             {loading
-              ? "Обробка..."
+              ? "Обробка запиту..."
               : tab === "login"
               ? "Увійти в акаунт ⚡"
               : "Зареєструватися (+2 500 GC) 🎁"}
           </button>
         </form>
+
+        <p className="mt-5 text-center text-xs text-slate-500 font-medium">
+          🔒 Безпечне збереження інвентаря та балансу GoiCoins
+        </p>
       </div>
     </div>
   );
