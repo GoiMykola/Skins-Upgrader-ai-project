@@ -1,4 +1,4 @@
-const ALLOWED_IMAGE_ORIGINS: Record<string, string> = {
+const IMAGE_HOST_MAP: Record<string, string> = {
   "https://community.akamai.steamstatic.com": "https://community.akamai.steamstatic.com",
   "https://community.cloudflare.steamstatic.com": "https://community.cloudflare.steamstatic.com",
   "https://raw.githubusercontent.com": "https://raw.githubusercontent.com",
@@ -20,7 +20,7 @@ function encodeSafePath(pathname: string): string {
 }
 
 /**
- * Reconstructs image URLs only from allowlisted origins and strictly
+ * Reconstructs image URLs only from allowlisted CDN hosts and strictly
  * validated path segments encoded with encodeURIComponent.
  */
 export function sanitizeImageUrl(raw: unknown): string {
@@ -34,11 +34,11 @@ export function sanitizeImageUrl(raw: unknown): string {
 
   try {
     const parsed = new URL(trimmed);
-    const trustedOrigin = ALLOWED_IMAGE_ORIGINS[parsed.origin];
-    if (!trustedOrigin) return "";
+    const cdnHost = IMAGE_HOST_MAP[parsed.origin];
+    if (!cdnHost) return "";
     const safePath = encodeSafePath(parsed.pathname);
     if (!safePath) return "";
-    return `${trustedOrigin}${safePath}`;
+    return `${cdnHost}${safePath}`;
   } catch {
     return "";
   }

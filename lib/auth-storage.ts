@@ -258,7 +258,7 @@ export function getCurrentUser(): UserProfile | null {
   }
 }
 
-export function registerUser(email: string, nickname: string, passInput: string): AuthResult {
+export function registerUser(email: string, nickname: string, entryText: string): AuthResult {
   if (typeof window === "undefined") return { success: false, message: "Серверне середовище" };
 
   const cleanEmail = email.trim().toLowerCase();
@@ -273,7 +273,7 @@ export function registerUser(email: string, nickname: string, passInput: string)
     return { success: false, message: "Нікнейм повинен містити щонайменше 2 символи!" };
   }
 
-  if (passInput.length < 4) {
+  if (entryText.length < 4) {
     return { success: false, message: "Пароль повинен містити щонайменше 4 символи!" };
   }
 
@@ -311,7 +311,7 @@ export function registerUser(email: string, nickname: string, passInput: string)
     ? cleanNickname.substring(0, 2).toUpperCase()
     : cleanNickname.substring(0, 1).toUpperCase();
 
-  sessionPassStore.set(cleanEmail, passInput);
+  sessionPassStore.set(cleanEmail, entryText);
 
   const newAccount: StoredUserAccount = {
     id: "gp_" + Math.random().toString(36).substring(2, 9),
@@ -354,7 +354,7 @@ export function registerUser(email: string, nickname: string, passInput: string)
   };
 }
 
-export function loginUser(email: string, passInput: string): AuthResult {
+export function loginUser(email: string, entryText: string): AuthResult {
   if (typeof window === "undefined") return { success: false, message: "Серверне середовище" };
 
   const cleanEmail = email.trim().toLowerCase();
@@ -376,7 +376,7 @@ export function loginUser(email: string, passInput: string): AuthResult {
     cleanEmail === "player@cs2goi.ua" ||
     cleanEmail === "admin@cs2goi.ua";
 
-  if (passInput.length < 4) {
+  if (entryText.length < 4) {
     return {
       success: false,
       message: "Пароль повинен містити щонайменше 4 символи!",
@@ -384,13 +384,13 @@ export function loginUser(email: string, passInput: string): AuthResult {
   }
 
   const expectedInSession = sessionPassStore.get(cleanEmail);
-  if (!isCreatorOrDemo && expectedInSession && expectedInSession !== passInput) {
+  if (!isCreatorOrDemo && expectedInSession && expectedInSession !== entryText) {
     return {
       success: false,
       message: "Невірний пароль! Спробуйте ще раз.",
     };
   }
-  sessionPassStore.set(cleanEmail, passInput);
+  sessionPassStore.set(cleanEmail, entryText);
 
   const profile: UserProfile = {
     id: user.id,
