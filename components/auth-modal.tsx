@@ -50,7 +50,7 @@ export function AuthModal({
     setSuccess(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     playClickSound();
     setError(null);
@@ -63,7 +63,7 @@ export function AuthModal({
         return;
       }
       setLoading(true);
-      const res = registerUser(email, nickname, password);
+      const res = await registerUser(email, nickname, password);
       setLoading(false);
 
       if (!res.success) {
@@ -79,7 +79,7 @@ export function AuthModal({
       }
     } else {
       setLoading(true);
-      const res = loginUser(email, password);
+      const res = await loginUser(email, password);
       setLoading(false);
 
       if (!res.success) {

@@ -14,8 +14,17 @@ export interface UserProfile {
 }
 
 export interface StoredUserAccount extends UserProfile {
-  password: string;
+  credentialHash?: string;
   inventory: InventoryItem[];
+}
+
+async function computeCredentialHash(email: string, secret: string): Promise<string | undefined> {
+  if (typeof window === "undefined" || !window.crypto?.subtle) return undefined;
+  const data = new TextEncoder().encode(`goicoins:${email}:${secret}`);
+  const digest = await window.crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 export interface AuthResult {
@@ -89,7 +98,6 @@ export const SUPABASE_TEST_ACCOUNTS: StoredUserAccount[] = [
     rank: "Global Elite 👑",
     createdAt: 1732380000000,
     initialCapital: 75000,
-    password: "password123",
     inventory: [
       {
         name: "Dragon Lore",
@@ -174,7 +182,6 @@ export const SUPABASE_TEST_ACCOUNTS: StoredUserAccount[] = [
     rank: "Global Elite",
     createdAt: 1732388400000,
     initialCapital: 75022,
-    password: "password123",
     inventory: STARTER_REGISTRATION_SKINS.map((s, idx) => ({
       ...s,
       instanceId: `sp-a-${s.finish}-${idx}`,
@@ -189,7 +196,6 @@ export const SUPABASE_TEST_ACCOUNTS: StoredUserAccount[] = [
     rank: "Supreme Master",
     createdAt: 1732392000000,
     initialCapital: 41500,
-    password: "password123",
     inventory: STARTER_REGISTRATION_SKINS.slice(0, 2).map((s, idx) => ({
       ...s,
       instanceId: `sp-b-${s.finish}-${idx}`,
@@ -201,8 +207,16 @@ export function getAllStoredUsers(): StoredUserAccount[] {
   if (typeof window === "undefined") return SUPABASE_TEST_ACCOUNTS;
   try {
     const raw = localStorage.getItem(AUTH_USERS_DB_KEY);
-    let users: StoredUserAccount[] = raw ? JSON.parse(raw) : [];
+    const parsed = raw ? (JSON.parse(raw) as Array<StoredUserAccount & { password?: unknown }>) : [];
     let changed = false;
+    const users: StoredUserAccount[] = parsed.map((entry) => {
+      if ("password" in entry) {
+        changed = true;
+        const { password: _legacy, ...clean } = entry;
+        return clean;
+      }
+      return entry;
+    });
 
     for (const sup of SUPABASE_TEST_ACCOUNTS) {
       const foundIdx = users.findIndex((u) => u.email.toLowerCase() === sup.email.toLowerCase());
@@ -244,7 +258,7 @@ export function getCurrentUser(): UserProfile | null {
   }
 }
 
-export function registerUser(email: string, nickname: string, password: string): AuthResult {
+export async function registerUser(email: string, nickname: string, secret: string): Promise<AuthResult> {
   if (typeof window === "undefined") return { success: false, message: "Серверне середовище" };
 
   const cleanEmail = email.trim().toLowerCase();
@@ -259,7 +273,7 @@ export function registerUser(email: string, nickname: string, password: string):
     return { success: false, message: "Нікнейм повинен містити щонайменше 2 символи!" };
   }
 
-  if (password.length < 4) {
+  if (secret.length < 4) {
     return { success: false, message: "Пароль повинен містити щонайменше 4 символи!" };
   }
 
@@ -297,6 +311,8 @@ export function registerUser(email: string, nickname: string, password: string):
     ? cleanNickname.substring(0, 2).toUpperCase()
     : cleanNickname.substring(0, 1).toUpperCase();
 
+  const credentialHash = await computeCredentialHash(cleanEmail, secret);
+
   const newAccount: StoredUserAccount = {
     id: "gp_" + Math.random().toString(36).substring(2, 9),
     email: cleanEmail,
@@ -306,7 +322,7 @@ export function registerUser(email: string, nickname: string, password: string):
     rank: "Global Elite",
     createdAt: Date.now(),
     initialCapital,
-    password,
+    ...(credentialHash ? { credentialHash } : {}),
     inventory: mergedInventory,
   };
 
@@ -339,7 +355,7 @@ export function registerUser(email: string, nickname: string, password: string):
   };
 }
 
-export function loginUser(email: string, password: string): AuthResult {
+export async function loginUser(email: string, secret: string): Promise<AuthResult> {
   if (typeof window === "undefined") return { success: false, message: "Серверне середовище" };
 
   const cleanEmail = email.trim().toLowerCase();
@@ -361,15 +377,17 @@ export function loginUser(email: string, password: string): AuthResult {
     cleanEmail === "player@cs2goi.ua" ||
     cleanEmail === "admin@cs2goi.ua";
 
-  if (user.password && user.password !== password) {
+  const candidateHash = await computeCredentialHash(cleanEmail, secret);
+
+  if (user.credentialHash && candidateHash && user.credentialHash !== candidateHash) {
     return {
       success: false,
       message: "Невірний пароль! Спробуйте ще раз.",
     };
   }
 
-  if (isCreatorOrDemo && password && password.length >= 4) {
-    user.password = password;
+  if (isCreatorOrDemo && secret.length >= 4 && candidateHash && !user.credentialHash) {
+    user.credentialHash = candidateHash;
     localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
   }
 

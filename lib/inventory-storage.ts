@@ -2,6 +2,7 @@
 
 import { skins, inventorySkins, type Skin } from "@/app/data";
 import { syncUserBalance, syncUserInventory } from "./auth-storage";
+import { sanitizeImageUrl } from "./safe-url";
 
 export type InventoryItem = Skin & { instanceId: string };
 
@@ -190,7 +191,7 @@ export function getStoredInventory(): InventoryItem[] {
         .filter((item) => item && typeof item === "object")
         .map((item: any, idx: number) => {
           const fullKey = `${item.weapon || "CS2"} | ${item.name || "Skin"}`;
-          let finalImage = item.image;
+          let finalImage = sanitizeImageUrl(item.image);
 
           if (OFFICIAL_SKIN_IMAGES[fullKey]) {
             if (
@@ -276,7 +277,7 @@ export function addSkinToInventory(newSkin: Skin): InventoryItem[] {
   try {
     const current = getStoredInventory();
     const fullKey = `${newSkin.weapon} | ${newSkin.name}`;
-    const verifiedImage = OFFICIAL_SKIN_IMAGES[fullKey] || newSkin.image;
+    const verifiedImage = sanitizeImageUrl(OFFICIAL_SKIN_IMAGES[fullKey] || newSkin.image);
 
     const newItem: InventoryItem = {
       ...newSkin,
@@ -313,7 +314,7 @@ export function replaceSkinInInventory(oldInstanceId: string, newSkin: Skin): In
     const current = getStoredInventory();
     const remaining = current.filter((s) => s.instanceId !== oldInstanceId);
     const fullKey = `${newSkin.weapon} | ${newSkin.name}`;
-    const verifiedImage = OFFICIAL_SKIN_IMAGES[fullKey] || newSkin.image;
+    const verifiedImage = sanitizeImageUrl(OFFICIAL_SKIN_IMAGES[fullKey] || newSkin.image);
 
     const newItem: InventoryItem = {
       ...newSkin,

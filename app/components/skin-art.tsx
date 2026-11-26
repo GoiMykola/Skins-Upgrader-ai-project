@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import type { Skin } from "../data";
 import { OFFICIAL_SKIN_IMAGES } from "@/lib/inventory-storage";
+import { sanitizeImageUrl } from "@/lib/safe-url";
 
 export interface SkinArtProps {
   skin?: any;
@@ -23,33 +24,37 @@ export default function SkinArt(props: SkinArtProps = {}) {
   const fullTitle = `${currentWeapon} | ${currentName}`.trim();
   const currentAccent = s?.accent || props?.accent || "#eb4b4b";
 
-  const preferredImage =
+  const preferredImage = sanitizeImageUrl(
     (OFFICIAL_SKIN_IMAGES && OFFICIAL_SKIN_IMAGES[fullTitle]) ||
-    s?.image ||
-    props?.image ||
-    "";
+      s?.image ||
+      props?.image ||
+      "",
+  );
 
   const [imgSrc, setImgSrc] = useState<string>(preferredImage);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    const updated =
+    const updated = sanitizeImageUrl(
       (OFFICIAL_SKIN_IMAGES && OFFICIAL_SKIN_IMAGES[fullTitle]) ||
-      s?.image ||
-      props?.image ||
-      "";
+        s?.image ||
+        props?.image ||
+        "",
+    );
     setImgSrc(updated);
     setHasError(false);
   }, [fullTitle, s?.image, props?.image]);
 
   const handleImageError = () => {
-    const fallback = OFFICIAL_SKIN_IMAGES && OFFICIAL_SKIN_IMAGES[fullTitle];
+    const fallback = sanitizeImageUrl(OFFICIAL_SKIN_IMAGES && OFFICIAL_SKIN_IMAGES[fullTitle]);
     if (fallback && imgSrc !== fallback) {
       setImgSrc(fallback);
     } else {
       setHasError(true);
     }
   };
+
+  const safeImgSrc = sanitizeImageUrl(imgSrc);
 
   return (
     <div
@@ -71,9 +76,9 @@ export default function SkinArt(props: SkinArtProps = {}) {
         CS2 OFFICIAL
       </span>
 
-      {imgSrc && !hasError ? (
+      {safeImgSrc && !hasError ? (
         <img
-          src={imgSrc}
+          src={safeImgSrc}
           alt={fullTitle}
           onError={handleImageError}
           className="relative z-10 max-h-[82%] max-w-[85%] object-contain drop-shadow-[0_12px_22px_rgba(0,0,0,0.85)] transition-transform duration-300 group-hover:scale-110"

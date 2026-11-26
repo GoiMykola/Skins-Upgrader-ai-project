@@ -6,6 +6,7 @@ import { getStoredInventory, removeSkinFromInventory, addSkinToInventory, type I
 import { formatCoins, skins } from "@/app/data";
 import { triggerConfetti, playJackpotSound } from "@/lib/confetti";
 import { playClickSound, playTickSound } from "@/lib/sound-fx";
+import { sanitizeImageUrl } from "@/lib/safe-url";
 
 const BOTS = [
   { id: "b1", name: "🤖 Bot S1mple", rank: "Global Elite" },
@@ -101,7 +102,9 @@ export default function DuelPage() {
               <span className="text-xs font-black uppercase text-emerald-400">ТВІЙ СКІН (ТИ)</span>
               {selectedSkin ? (
                 <div className="my-4">
-                  <img src={selectedSkin.image} alt={selectedSkin.name} className="h-32 object-contain mx-auto" />
+                  {sanitizeImageUrl(selectedSkin.image) && (
+                    <img src={sanitizeImageUrl(selectedSkin.image)} alt={selectedSkin.name} className="h-32 object-contain mx-auto" />
+                  )}
                   <p className="text-lg font-black text-white mt-2">{selectedSkin.weapon} | {selectedSkin.name}</p>
                   <p className="text-base font-mono font-black text-emerald-400">{formatCoins(selectedSkin.price)} GC</p>
                 </div>
@@ -132,7 +135,9 @@ export default function DuelPage() {
                 <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full">{selectedBot.rank}</span>
               </div>
               <div className="my-4">
-                <img src={botSkin.image} alt={botSkin.name} className="h-32 object-contain mx-auto" />
+                {sanitizeImageUrl(botSkin.image) && (
+                  <img src={sanitizeImageUrl(botSkin.image)} alt={botSkin.name} className="h-32 object-contain mx-auto" />
+                )}
                 <p className="text-lg font-black text-white mt-2">{botSkin.weapon} | {botSkin.name}</p>
                 <p className="text-base font-mono font-black text-rose-400">{formatCoins(botSkin.price)} GC</p>
               </div>
@@ -143,21 +148,24 @@ export default function DuelPage() {
         <div className="mt-8">
           <h3 className="text-xl font-black text-white mb-4">Обери свій скін для битви:</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-            {inventory.map((item) => (
-              <div
-                key={item.instanceId}
-                onClick={() => handleSelectSkin(item)}
-                className={`rounded-2xl border p-3 flex flex-col justify-between items-center text-center cursor-pointer transition ${
-                  selectedSkin?.instanceId === item.instanceId
-                    ? "border-emerald-400 bg-emerald-500/20 scale-95"
-                    : "border-white/10 bg-[#0e111a] hover:border-emerald-500/40"
-                }`}
-              >
-                <img src={item.image} alt={item.name} className="h-16 object-contain my-1" />
-                <p className="text-xs font-black text-white truncate w-full">{item.name}</p>
-                <span className="text-xs font-mono text-emerald-400 font-bold mt-1">{formatCoins(item.price)} GC</span>
-              </div>
-            ))}
+            {inventory.map((item) => {
+              const safeImg = sanitizeImageUrl(item.image);
+              return (
+                <div
+                  key={item.instanceId}
+                  onClick={() => handleSelectSkin(item)}
+                  className={`rounded-2xl border p-3 flex flex-col justify-between items-center text-center cursor-pointer transition ${
+                    selectedSkin?.instanceId === item.instanceId
+                      ? "border-emerald-400 bg-emerald-500/20 scale-95"
+                      : "border-white/10 bg-[#0e111a] hover:border-emerald-500/40"
+                  }`}
+                >
+                  {safeImg && <img src={safeImg} alt={item.name} className="h-16 object-contain my-1" />}
+                  <p className="text-xs font-black text-white truncate w-full">{item.name}</p>
+                  <span className="text-xs font-mono text-emerald-400 font-bold mt-1">{formatCoins(item.price)} GC</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </main>

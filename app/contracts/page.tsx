@@ -7,6 +7,7 @@ import { getStoredInventory, removeSkinFromInventory, addSkinToInventory, type I
 import { formatCoins, skins } from "@/app/data";
 import { triggerConfetti, playJackpotSound } from "@/lib/confetti";
 import { playClickSound } from "@/lib/sound-fx";
+import { sanitizeImageUrl } from "@/lib/safe-url";
 
 export default function ContractsPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -116,7 +117,9 @@ export default function ContractsPage() {
                 >
                   {item ? (
                     <>
-                      <img src={item.image} alt={item.name} className="h-12 object-contain" />
+                      {sanitizeImageUrl(item.image) && (
+                        <img src={sanitizeImageUrl(item.image)} alt={item.name} className="h-12 object-contain" />
+                      )}
                       <p className="text-[10px] font-bold text-white truncate w-full text-center mt-1">{item.name}</p>
                       <span className="text-[9px] font-mono text-emerald-400 font-black">{formatCoins(item.price)} GC</span>
                     </>
@@ -132,7 +135,9 @@ export default function ContractsPage() {
             <div className="mt-6 rounded-2xl border-2 border-emerald-400 bg-emerald-500/20 p-6 text-center animate-bounce">
               <p className="text-xs font-black uppercase text-emerald-400">🎉 КОНТРАКТ УСПІШНО ПІДПИСАНО! ОТРИМАНО:</p>
               <div className="my-3 flex justify-center">
-                <img src={craftedSkin.image} alt={craftedSkin.name} className="h-28 object-contain" />
+                {sanitizeImageUrl(craftedSkin.image) && (
+                  <img src={sanitizeImageUrl(craftedSkin.image)} alt={craftedSkin.name} className="h-28 object-contain" />
+                )}
               </div>
               <p className="text-xl font-black text-white">{craftedSkin.weapon} | {craftedSkin.name}</p>
               <p className="text-base font-mono font-black text-emerald-400 mt-1">{formatCoins(craftedSkin.price)} GC</p>
@@ -150,6 +155,7 @@ export default function ContractsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
               {inventory.map((item) => {
                 const isSelected = selectedIds.includes(item.instanceId);
+                const safeItemImage = sanitizeImageUrl(item.image);
                 return (
                   <div
                     key={item.instanceId}
@@ -160,7 +166,9 @@ export default function ContractsPage() {
                         : "border-white/10 bg-[#0e111a] hover:border-emerald-500/40"
                     }`}
                   >
-                    <img src={item.image} alt={item.name} className="h-16 object-contain my-1" />
+                    {safeItemImage && (
+                      <img src={safeItemImage} alt={item.name} className="h-16 object-contain my-1" />
+                    )}
                     <p className="text-xs font-black text-white truncate w-full">{item.name}</p>
                     <span className="text-xs font-mono text-emerald-400 font-bold mt-1">{formatCoins(item.price)} GC</span>
                     <button className="mt-2 w-full rounded-xl bg-white/5 py-1 text-[10px] font-black text-slate-300">
