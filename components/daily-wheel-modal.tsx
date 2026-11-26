@@ -23,12 +23,18 @@ export function DailyWheelModal({ isOpen, onClose }: DailyWheelModalProps) {
   const [wonPrize, setWonPrize] = useState<WheelPrize | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
       const status = canSpinWheel();
       setCanSpin(status.allowed);
       setTimeLeft(status.remainingSec);
       setWonPrize(null);
-    }
+    });
+    return () => {
+      active = false;
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;

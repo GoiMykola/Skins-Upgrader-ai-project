@@ -20,12 +20,18 @@ export function GameStatsModal({ isOpen, onClose }: GameStatsModalProps) {
   };
 
   useEffect(() => {
+    let active = true;
     if (isOpen) {
-      update();
+      queueMicrotask(() => {
+        if (active) update();
+      });
     }
     const handleUpdate = () => update();
     window.addEventListener("goi-history-updated", handleUpdate);
-    return () => window.removeEventListener("goi-history-updated", handleUpdate);
+    return () => {
+      active = false;
+      window.removeEventListener("goi-history-updated", handleUpdate);
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;

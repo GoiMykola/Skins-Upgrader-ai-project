@@ -189,7 +189,7 @@ export function getStoredInventory(): InventoryItem[] {
       let hasUpdates = false;
       const healedItems: InventoryItem[] = parsed
         .filter((item) => item && typeof item === "object")
-        .map((item: any, idx: number) => {
+        .map((item: Partial<InventoryItem> & { finish?: string }, idx: number) => {
           const fullKey = `${item.weapon || "CS2"} | ${item.name || "Skin"}`;
           let finalImage = sanitizeImageUrl(item.image);
 

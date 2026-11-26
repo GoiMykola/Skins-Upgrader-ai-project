@@ -24,8 +24,12 @@ export default function SiteHeader() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setBalance(getStoredBalance());
-    setCurrentUser(getCurrentUser());
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setBalance(getStoredBalance());
+      setCurrentUser(getCurrentUser());
+    });
 
     const handleBal = (e: CustomEvent<number>) => {
       if (typeof e.detail === "number") setBalance(e.detail);
@@ -55,6 +59,7 @@ export default function SiteHeader() {
     document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
+      active = false;
       window.removeEventListener("goi-balance-updated", handleBal as EventListener);
       window.removeEventListener("goi-auth-updated", handleAuth as EventListener);
       window.removeEventListener("keydown", handleKeyDown);

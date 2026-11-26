@@ -28,9 +28,16 @@ export function AuthModal({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setTab(initialTab);
-    setError(null);
-    setSuccess(null);
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setTab(initialTab);
+      setError(null);
+      setSuccess(null);
+    });
+    return () => {
+      active = false;
+    };
   }, [initialTab, isOpen]);
 
   useEffect(() => {

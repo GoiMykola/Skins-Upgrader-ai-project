@@ -122,38 +122,42 @@ export function InteractiveUpgrader() {
   const tickIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const inv = getStoredInventory();
-    setUserInventory(inv);
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      const inv = getStoredInventory();
+      setUserInventory(inv);
 
-    let activeSkin: InventoryItem | null = inv.length > 0 ? inv[0] : null;
+      let activeSkin: InventoryItem | null = inv.length > 0 ? inv[0] : null;
 
-    try {
-      const selectedSourceRaw = localStorage.getItem("goicoins_selected_source");
-      if (selectedSourceRaw) {
-        const parsed = JSON.parse(selectedSourceRaw);
-        const match = inv.find(
-          (i) => i.instanceId === parsed.instanceId || (i.finish === parsed.finish && i.name === parsed.name)
-        );
-        if (match) {
-          activeSkin = match;
+      try {
+        const selectedSourceRaw = localStorage.getItem("goicoins_selected_source");
+        if (selectedSourceRaw) {
+          const parsed = JSON.parse(selectedSourceRaw);
+          const match = inv.find(
+            (i) => i.instanceId === parsed.instanceId || (i.finish === parsed.finish && i.name === parsed.name)
+          );
+          if (match) {
+            activeSkin = match;
+          }
+          localStorage.removeItem("goicoins_selected_source");
         }
-        localStorage.removeItem("goicoins_selected_source");
-      }
-    } catch {}
+      } catch {}
 
-    setSourceSkin(activeSkin);
-    setMuted(isMuted());
+      setSourceSkin(activeSkin);
+      setMuted(isMuted());
 
-    try {
-      const selectedTargetRaw = localStorage.getItem("goicoins_selected_target");
-      if (selectedTargetRaw) {
-        const parsed = JSON.parse(selectedTargetRaw);
-        if (parsed && parsed.name && parsed.price) {
-          setTargetSkin(parsed);
-          localStorage.removeItem("goicoins_selected_target");
+      try {
+        const selectedTargetRaw = localStorage.getItem("goicoins_selected_target");
+        if (selectedTargetRaw) {
+          const parsed = JSON.parse(selectedTargetRaw);
+          if (parsed && parsed.name && parsed.price) {
+            setTargetSkin(parsed);
+            localStorage.removeItem("goicoins_selected_target");
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    });
 
     async function loadMarket() {
       setIsLoadingMarket(true);
@@ -183,7 +187,14 @@ export function InteractiveUpgrader() {
         fullName: `${s.weapon} | ${s.name}`,
         price: s.price,
         image: s.image,
-        category: (s.kind === "knife" ? "knives" : s.kind === "sniper" ? "snipers" : s.kind === "pistol" ? "pistols" : "rifles") as any,
+        category:
+          s.category === "knives"
+            ? "knives"
+            : s.category === "snipers"
+              ? "snipers"
+              : s.category === "pistols"
+                ? "pistols"
+                : "rifles",
         rarityUk: s.rarity || "Таємне",
         rarityColor: s.accent || "#eb4b4b",
       }));
@@ -205,6 +216,7 @@ export function InteractiveUpgrader() {
     window.addEventListener("goi-inventory-updated", handleInvUpdate as EventListener);
 
     return () => {
+      active = false;
       if (timerRef.current) clearTimeout(timerRef.current);
       if (crawlIntervalRef.current) clearInterval(crawlIntervalRef.current);
       if (tickIntervalRef.current) clearInterval(tickIntervalRef.current);
@@ -276,7 +288,7 @@ export function InteractiveUpgrader() {
   };
 
   const filteredMarketTargets = useMemo(() => {
-    let result = marketSkins.filter((s) => {
+    const result = marketSkins.filter((s) => {
       if (onlyValidUpgrades && sourceSkin && s.price <= sourceSkin.price) {
         return false;
       }
@@ -1016,7 +1028,7 @@ export function InteractiveUpgrader() {
                 
                 <select
                   value={pickerSort}
-                  onChange={(e) => setPickerSort(e.target.value as any)}
+                  onChange={(e) => setPickerSort(e.target.value as typeof pickerSort)}
                   className="rounded-xl border border-white/10 bg-black/50 px-3 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-400 shrink-0"
                 >
                   <option value="price_desc">Ціна: від дорогих</option>

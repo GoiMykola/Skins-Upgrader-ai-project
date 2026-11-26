@@ -53,7 +53,14 @@ export function marketSkinToSkin(item: MarketSkin): Skin {
     rarity: item.rarityUk || item.rarity,
     accent: item.rarityColor || "#eb4b4b",
     finish: item.id || item.name.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-    kind: (item.category === "knives" ? "knife" : item.category === "snipers" ? "sniper" : item.category === "pistols" ? "pistol" : "rifle") as any,
+    kind:
+      item.category === "knives"
+        ? "knife"
+        : item.category === "snipers"
+          ? "sniper"
+          : item.category === "pistols"
+            ? "pistol"
+            : "rifle",
     image: item.image,
   };
 }

@@ -22,7 +22,10 @@ export function LiveDropsTicker() {
   const [newestDropId, setNewestDropId] = useState<string | null>(null);
 
   useEffect(() => {
-    setDrops(getStoredLiveDrops());
+    let active = true;
+    queueMicrotask(() => {
+      if (active) setDrops(getStoredLiveDrops());
+    });
 
     const handleNewDrop = (e: CustomEvent<LiveDrop>) => {
       if (e.detail) {
@@ -45,6 +48,7 @@ export function LiveDropsTicker() {
     }, 10000);
 
     return () => {
+      active = false;
       window.removeEventListener("goi-live-drop", handleNewDrop as EventListener);
       window.removeEventListener("goi-live-drop-cleared", handleCleared as EventListener);
       clearInterval(timer);

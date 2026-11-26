@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { LiveDropsTicker } from "@/components/live-drops-ticker";
 import { getStoredInventory, removeSkinFromInventory, addSkinToInventory, type InventoryItem } from "@/lib/inventory-storage";
-import { formatCoins, skins } from "@/app/data";
+import { formatCoins, skins, type Skin } from "@/app/data";
 import { triggerConfetti, playJackpotSound } from "@/lib/confetti";
 import { playClickSound, playTickSound } from "@/lib/sound-fx";
 import { sanitizeImageUrl } from "@/lib/safe-url";
@@ -18,23 +18,32 @@ export default function DuelPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [selectedSkin, setSelectedSkin] = useState<InventoryItem | null>(null);
   const [selectedBot] = useState(BOTS[0]);
-  const [botSkin, setBotSkin] = useState<any>(skins[0]);
+  const [botSkin, setBotSkin] = useState<Skin>(skins[0]);
   const [isDueling, setIsDueling] = useState(false);
   const [duelWinner, setDuelWinner] = useState<"player" | "bot" | null>(null);
 
-  useEffect(() => {
-    const inv = getStoredInventory();
-    setInventory(inv);
-    if (inv.length > 0) {
-      setSelectedSkin(inv[0]);
-      matchBotSkin(inv[0].price);
-    }
-  }, []);
-
-  const matchBotSkin = (price: number) => {
+  const matchBotSkin = useCallback((price: number) => {
     const matched = skins.filter((s) => Math.abs(s.price - price) < price * 0.3);
     setBotSkin(matched.length > 0 ? matched[Math.floor(Math.random() * matched.length)] : skins[0]);
-  };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      const inv = getStoredInventory();
+      setInventory(inv);
+      if (inv.length > 0) {
+        setSelectedSkin(inv[0]);
+        const price = inv[0].price;
+        const matched = skins.filter((s) => Math.abs(s.price - price) < price * 0.3);
+        setBotSkin(matched.length > 0 ? matched[Math.floor(Math.random() * matched.length)] : skins[0]);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSelectSkin = (skin: InventoryItem) => {
     playClickSound();

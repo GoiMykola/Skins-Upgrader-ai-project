@@ -87,11 +87,11 @@ export function checkSkinReply(text: string): CheckedReply {
     return { ok: false, reason: "розмітка або скрипт у текстовому полі" };
   }
 
-  if (typeof obj.weapon !== "string" || !ALLOWED_WEAPONS.includes(obj.weapon as any)) {
+  if (typeof obj.weapon !== "string" || !(ALLOWED_WEAPONS as readonly string[]).includes(obj.weapon)) {
     return { ok: false, reason: `невідома модель зброї: ${obj.weapon}` };
   }
 
-  if (typeof obj.rarity !== "string" || !ALLOWED_RARITIES.includes(obj.rarity as any)) {
+  if (typeof obj.rarity !== "string" || !(ALLOWED_RARITIES as readonly string[]).includes(obj.rarity)) {
     return { ok: false, reason: `неприпустима рідкість: ${obj.rarity}` };
   }
 

@@ -150,7 +150,10 @@ export function grantCoinsToUser(targetId: string, amount: number): { success: b
 }
 
 // Нарахування будь-якого скіна конкретному гравцю (або собі)
-export function grantSkinToUser(targetId: string, skin: any): { success: boolean; targetName: string } {
+export function grantSkinToUser(
+  targetId: string,
+  skin: { name: string; weapon: string; price: number; image: string; rarity?: string; accent?: string },
+): { success: boolean; targetName: string } {
   if (typeof window === "undefined") return { success: false, targetName: "" };
 
   const current = getCurrentUser();

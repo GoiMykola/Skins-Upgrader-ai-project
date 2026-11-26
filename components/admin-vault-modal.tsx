@@ -38,7 +38,10 @@ export function AdminVaultModal({ isOpen, onClose }: AdminVaultModalProps) {
   const [skinSearch, setSkinSearch] = useState<string>("");
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
       setIsAuth(isAdminAuthenticated());
       setGodModeState(isGodModeActive());
       const lock = isLockedOut();
@@ -51,7 +54,10 @@ export function AdminVaultModal({ isOpen, onClose }: AdminVaultModalProps) {
       if (playerList.length > 0) {
         setSelectedPlayerId(playerList[0].id);
       }
-    }
+    });
+    return () => {
+      active = false;
+    };
   }, [isOpen]);
 
   const filteredSkins = useMemo(() => {

@@ -42,7 +42,7 @@ export function getStoredLiveDrops(): LiveDrop[] {
 
     // Суворо відфільтровуємо лише реальні виграші
     const realOnly = parsed.filter(
-      (d: any) =>
+      (d: Partial<LiveDrop> & { isRealWin?: boolean }) =>
         d &&
         typeof d === "object" &&
         (d.isRealWin === true || (typeof d.id === "string" && d.id.startsWith("real_win_"))) &&

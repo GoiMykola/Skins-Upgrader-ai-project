@@ -7,8 +7,8 @@ import { OFFICIAL_SKIN_IMAGES } from "@/lib/inventory-storage";
 import { sanitizeImageUrl } from "@/lib/safe-url";
 
 export interface SkinArtProps {
-  skin?: any;
-  item?: any;
+  skin?: Partial<Skin>;
+  item?: Partial<Skin>;
   image?: string;
   name?: string;
   weapon?: string;
@@ -35,14 +35,21 @@ export default function SkinArt(props: SkinArtProps = {}) {
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    let active = true;
     const updated = sanitizeImageUrl(
       (OFFICIAL_SKIN_IMAGES && OFFICIAL_SKIN_IMAGES[fullTitle]) ||
         s?.image ||
         props?.image ||
         "",
     );
-    setImgSrc(updated);
-    setHasError(false);
+    queueMicrotask(() => {
+      if (!active) return;
+      setImgSrc(updated);
+      setHasError(false);
+    });
+    return () => {
+      active = false;
+    };
   }, [fullTitle, s?.image, props?.image]);
 
   const handleImageError = () => {

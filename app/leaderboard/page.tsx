@@ -78,7 +78,10 @@ export default function LeaderboardPage() {
   };
 
   useEffect(() => {
-    refreshLeaderboard();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) refreshLeaderboard();
+    });
 
     const handleAuth = () => refreshLeaderboard();
     const handleInv = () => refreshLeaderboard();
@@ -89,6 +92,7 @@ export default function LeaderboardPage() {
     window.addEventListener("goi-balance-updated", handleBal);
 
     return () => {
+      active = false;
       window.removeEventListener("goi-auth-updated", handleAuth);
       window.removeEventListener("goi-inventory-updated", handleInv);
       window.removeEventListener("goi-balance-updated", handleBal);

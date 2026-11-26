@@ -18,7 +18,8 @@ export async function GET() {
       });
     }
     return NextResponse.json({ error: "cs2-market.json not found" }, { status: 404 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

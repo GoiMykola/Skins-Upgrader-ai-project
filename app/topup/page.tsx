@@ -26,17 +26,23 @@ export default function TopUpPage() {
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [usedPromos, setUsedPromos] = useState<string[]>([]);
   const [lastDailyClaim, setLastDailyClaim] = useState<number | null>(null);
+  const [nowTs, setNowTs] = useState<number | null>(null);
 
   useEffect(() => {
-    setBalance(getStoredBalance());
-    setUser(getCurrentUser());
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setBalance(getStoredBalance());
+      setUser(getCurrentUser());
+      setNowTs(Date.now());
 
-    try {
-      const storedUsed = localStorage.getItem("goicoins_used_promos");
-      if (storedUsed) setUsedPromos(JSON.parse(storedUsed));
-      const storedDaily = localStorage.getItem("goicoins_last_daily");
-      if (storedDaily) setLastDailyClaim(parseInt(storedDaily, 10));
-    } catch {}
+      try {
+        const storedUsed = localStorage.getItem("goicoins_used_promos");
+        if (storedUsed) setUsedPromos(JSON.parse(storedUsed));
+        const storedDaily = localStorage.getItem("goicoins_last_daily");
+        if (storedDaily) setLastDailyClaim(parseInt(storedDaily, 10));
+      } catch {}
+    });
 
     const handleBal = (e: CustomEvent<number>) => {
       if (typeof e.detail === "number") setBalance(e.detail);
@@ -49,12 +55,13 @@ export default function TopUpPage() {
     window.addEventListener("goi-auth-updated", handleAuth as EventListener);
 
     return () => {
+      active = false;
       window.removeEventListener("goi-balance-updated", handleBal as EventListener);
       window.removeEventListener("goi-auth-updated", handleAuth as EventListener);
     };
   }, []);
 
-  const canClaimDaily = !lastDailyClaim || Date.now() - lastDailyClaim > 24 * 60 * 60 * 1000;
+  const canClaimDaily = !lastDailyClaim || (nowTs !== null && nowTs - lastDailyClaim > 24 * 60 * 60 * 1000);
 
   const handleClaimDaily = () => {
     if (!canClaimDaily) return;
@@ -63,6 +70,7 @@ export default function TopUpPage() {
     setBalance(newBal);
     const now = Date.now();
     setLastDailyClaim(now);
+    setNowTs(now);
     try {
       localStorage.setItem("goicoins_last_daily", now.toString());
     } catch {}

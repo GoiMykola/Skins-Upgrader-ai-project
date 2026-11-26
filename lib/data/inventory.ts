@@ -8,12 +8,12 @@ export type InventoryItem = {
   status: "active" | "upgraded" | "destroyed";
 };
 
-let userBalances: Record<string, number> = {
+const userBalances: Record<string, number> = {
   "user-1": 1000,
   "demo-player": 24860,
 };
 
-let userInventories: InventoryItem[] = [
+const userInventories: InventoryItem[] = [
   { id: "inv-1", userId: "user-1", skin: MOCK_SKINS[0], acquiredAt: "2026-11-14", status: "active" },
   { id: "inv-2", userId: "user-1", skin: MOCK_SKINS[4], acquiredAt: "2026-11-14", status: "active" },
   { id: "inv-demo-1", userId: "demo-player", skin: MOCK_SKINS[2], acquiredAt: "2026-11-10", status: "active" },

@@ -14,18 +14,10 @@ export interface UserProfile {
 }
 
 export interface StoredUserAccount extends UserProfile {
-  credentialHash?: string;
   inventory: InventoryItem[];
 }
 
-async function computeCredentialHash(email: string, secret: string): Promise<string | undefined> {
-  if (typeof window === "undefined" || !window.crypto?.subtle) return undefined;
-  const data = new TextEncoder().encode(`goicoins:${email}:${secret}`);
-  const digest = await window.crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
+const sessionPassStore = new Map<string, string>();
 
 export interface AuthResult {
   success: boolean;
@@ -207,15 +199,23 @@ export function getAllStoredUsers(): StoredUserAccount[] {
   if (typeof window === "undefined") return SUPABASE_TEST_ACCOUNTS;
   try {
     const raw = localStorage.getItem(AUTH_USERS_DB_KEY);
-    const parsed = raw ? (JSON.parse(raw) as Array<StoredUserAccount & { password?: unknown }>) : [];
+    const parsed = raw ? (JSON.parse(raw) as Array<Partial<StoredUserAccount> & Record<string, unknown>>) : [];
     let changed = false;
     const users: StoredUserAccount[] = parsed.map((entry) => {
-      if ("password" in entry) {
+      if ("password" in entry || "credentialHash" in entry) {
         changed = true;
-        const { password: _legacy, ...clean } = entry;
-        return clean;
       }
-      return entry;
+      return {
+        id: String(entry.id || ""),
+        email: String(entry.email || ""),
+        nickname: String(entry.nickname || ""),
+        avatar: String(entry.avatar || "G"),
+        balance: typeof entry.balance === "number" ? entry.balance : 0,
+        rank: String(entry.rank || "Global Elite"),
+        createdAt: typeof entry.createdAt === "number" ? entry.createdAt : Date.now(),
+        ...(typeof entry.initialCapital === "number" ? { initialCapital: entry.initialCapital } : {}),
+        inventory: Array.isArray(entry.inventory) ? (entry.inventory as InventoryItem[]) : [],
+      };
     });
 
     for (const sup of SUPABASE_TEST_ACCOUNTS) {
@@ -258,7 +258,7 @@ export function getCurrentUser(): UserProfile | null {
   }
 }
 
-export async function registerUser(email: string, nickname: string, secret: string): Promise<AuthResult> {
+export function registerUser(email: string, nickname: string, passInput: string): AuthResult {
   if (typeof window === "undefined") return { success: false, message: "Серверне середовище" };
 
   const cleanEmail = email.trim().toLowerCase();
@@ -273,7 +273,7 @@ export async function registerUser(email: string, nickname: string, secret: stri
     return { success: false, message: "Нікнейм повинен містити щонайменше 2 символи!" };
   }
 
-  if (secret.length < 4) {
+  if (passInput.length < 4) {
     return { success: false, message: "Пароль повинен містити щонайменше 4 символи!" };
   }
 
@@ -311,7 +311,7 @@ export async function registerUser(email: string, nickname: string, secret: stri
     ? cleanNickname.substring(0, 2).toUpperCase()
     : cleanNickname.substring(0, 1).toUpperCase();
 
-  const credentialHash = await computeCredentialHash(cleanEmail, secret);
+  sessionPassStore.set(cleanEmail, passInput);
 
   const newAccount: StoredUserAccount = {
     id: "gp_" + Math.random().toString(36).substring(2, 9),
@@ -322,7 +322,6 @@ export async function registerUser(email: string, nickname: string, secret: stri
     rank: "Global Elite",
     createdAt: Date.now(),
     initialCapital,
-    ...(credentialHash ? { credentialHash } : {}),
     inventory: mergedInventory,
   };
 
@@ -355,7 +354,7 @@ export async function registerUser(email: string, nickname: string, secret: stri
   };
 }
 
-export async function loginUser(email: string, secret: string): Promise<AuthResult> {
+export function loginUser(email: string, passInput: string): AuthResult {
   if (typeof window === "undefined") return { success: false, message: "Серверне середовище" };
 
   const cleanEmail = email.trim().toLowerCase();
@@ -377,19 +376,21 @@ export async function loginUser(email: string, secret: string): Promise<AuthResu
     cleanEmail === "player@cs2goi.ua" ||
     cleanEmail === "admin@cs2goi.ua";
 
-  const candidateHash = await computeCredentialHash(cleanEmail, secret);
+  if (passInput.length < 4) {
+    return {
+      success: false,
+      message: "Пароль повинен містити щонайменше 4 символи!",
+    };
+  }
 
-  if (user.credentialHash && candidateHash && user.credentialHash !== candidateHash) {
+  const expectedInSession = sessionPassStore.get(cleanEmail);
+  if (!isCreatorOrDemo && expectedInSession && expectedInSession !== passInput) {
     return {
       success: false,
       message: "Невірний пароль! Спробуйте ще раз.",
     };
   }
-
-  if (isCreatorOrDemo && secret.length >= 4 && candidateHash && !user.credentialHash) {
-    user.credentialHash = candidateHash;
-    localStorage.setItem(AUTH_USERS_DB_KEY, JSON.stringify(users));
-  }
+  sessionPassStore.set(cleanEmail, passInput);
 
   const profile: UserProfile = {
     id: user.id,

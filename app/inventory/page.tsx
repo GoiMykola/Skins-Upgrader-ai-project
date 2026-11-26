@@ -24,9 +24,13 @@ export default function InventoryPage() {
   const [confirmSellAll, setConfirmSellAll] = useState(false);
 
   useEffect(() => {
-    setInventory(getStoredInventory());
-    setBalance(getStoredBalance());
-    setUser(getCurrentUser());
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setInventory(getStoredInventory());
+      setBalance(getStoredBalance());
+      setUser(getCurrentUser());
+    });
 
     const handleInv = (e: CustomEvent<InventoryItem[]>) => {
       if (e.detail) setInventory(e.detail);
@@ -43,6 +47,7 @@ export default function InventoryPage() {
     window.addEventListener("goi-auth-updated", handleAuth as EventListener);
 
     return () => {
+      active = false;
       window.removeEventListener("goi-inventory-updated", handleInv as EventListener);
       window.removeEventListener("goi-balance-updated", handleBal as EventListener);
       window.removeEventListener("goi-auth-updated", handleAuth as EventListener);

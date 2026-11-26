@@ -25,7 +25,10 @@ export default function MarketPage() {
   const [purchasedSkin, setPurchasedSkin] = useState<MarketSkin | null>(null);
 
   useEffect(() => {
-    setBalance(getStoredBalance());
+    let active = true;
+    queueMicrotask(() => {
+      if (active) setBalance(getStoredBalance());
+    });
 
     async function loadMarket() {
       try {
@@ -58,6 +61,7 @@ export default function MarketPage() {
     };
     window.addEventListener("goi-balance-updated", handleBal as EventListener);
     return () => {
+      active = false;
       window.removeEventListener("goi-balance-updated", handleBal as EventListener);
     };
   }, []);

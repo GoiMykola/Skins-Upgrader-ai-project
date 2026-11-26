@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { LiveDropsTicker } from "@/components/live-drops-ticker";
 import { getStoredInventory, removeSkinFromInventory, addSkinToInventory, type InventoryItem } from "@/lib/inventory-storage";
-import { formatCoins, skins } from "@/app/data";
+import { formatCoins, skins, type Skin } from "@/app/data";
 import { triggerConfetti, playJackpotSound } from "@/lib/confetti";
 import { playClickSound } from "@/lib/sound-fx";
 import { sanitizeImageUrl } from "@/lib/safe-url";
@@ -13,10 +13,16 @@ export default function ContractsPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isSigning, setIsSigning] = useState(false);
-  const [craftedSkin, setCraftedSkin] = useState<any | null>(null);
+  const [craftedSkin, setCraftedSkin] = useState<Skin | null>(null);
 
   useEffect(() => {
-    setInventory(getStoredInventory());
+    let active = true;
+    queueMicrotask(() => {
+      if (active) setInventory(getStoredInventory());
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const selectedItems = inventory.filter((item) => selectedIds.includes(item.instanceId));
