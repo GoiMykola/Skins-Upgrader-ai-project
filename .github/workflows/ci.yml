@@ -1,0 +1,66 @@
+# Конвеєр перевірок (практична робота 7). Не змінюйте назви перевірок lint, test, secrets:
+# на них посилається правило захисту гілки main (крок 11 методичних вказівок).
+# Запускається при кожному запиті на злиття (pull request) у main і при кожному надсиланні змін у main.
+# lint    — лінтер ESLint (npm run lint);
+# test    — тести Vitest (npm test) з хмарною базою Supabase і тестовими акаунтами А і Б;
+# secrets — пошук рядків, схожих на ключі, у файлах репозиторію і файлів .env у репозиторії.
+# Статичний аналіз безпеки виконує CodeQL: він вмикається в налаштуваннях репозиторію (крок 2), а не цим файлом.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    # Значення беруться із секретів репозиторію (Settings → Secrets and variables → Actions).
+    # У журналі прогону GitHub замінює їх зірочками. Ключ провайдера моделі тестам не потрібен.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      TEST_USER_A_EMAIL: ${{ secrets.TEST_USER_A_EMAIL }}
+      TEST_USER_B_EMAIL: ${{ secrets.TEST_USER_B_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+  secrets:
+    name: secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Пошук ключів і файлів .env у репозиторії
+        run: |
+          # Виводяться лише назви файлів, а не самі рядки: журнал прогону публічний.
+          PATTERN='AIza[0-9A-Za-z_-]{35}|gsk_[0-9A-Za-z]{20,}|sb_secret_[0-9A-Za-z_-]{10,}|sbp_[0-9a-f]{20,}|eyJ[0-9A-Za-z_-]{10,}[.]eyJ[0-9A-Za-z_-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+          FOUND=0
+          if git grep -lE "$PATTERN" -- . ':(exclude)package-lock.json'; then
+            echo "::error::У файлах вище є рядки, схожі на ключі. Приберіть їх і відкличте ключ (крок 6 методичних вказівок)."
+            FOUND=1
+          fi
+          if git ls-files | grep -E '(^|/)[.]env' | grep -vE '(^|/)[.]env[.]example$'; then
+            echo "::error::У репозиторії є файл .env (вище). Видаліть його з репозиторію і відкличте ключі з нього."
+            FOUND=1
+          fi
+          if [ "$FOUND" = "1" ]; then exit 1; fi
+          echo "Ключів і файлів .env у репозиторії не знайдено."
