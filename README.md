@@ -32,8 +32,8 @@
 ## 5. Змінні середовища
 | Назва змінної | Де взяти значення | `.env.local` (Codespace) | Vercel `Production` | Vercel `Preview` | Секрети GitHub Actions |
 | --- | --- | --- | --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → Data API / API | так | так | так | так |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API Keys (anon/public) | так | так | так | так |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → Data API (базовий URL `https://<project-ref>.supabase.co`, **без** `/rest/v1`) | так | так | так | так |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API Keys (Publishable або legacy `anon` public, **не** Secret key) | так | так | так | так |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API Keys (необов'язково, лише для резервного скидання паролів тестів) | за потреби | ні | ні | ні |
 | `TEST_USER_A_EMAIL` | Email тестового гравця А (створюється в Supabase Auth) | так | ні | ні | так |
 | `TEST_USER_B_EMAIL` | Email тестового гравця Б (створюється в Supabase Auth) | так | ні | ні | так |
@@ -62,10 +62,11 @@ GEMINI_MODEL=
 ## 7. Налаштування бази даних (Supabase)
 1. У [supabase.com/dashboard](https://supabase.com/dashboard) створіть новий проєкт на безкоштовному тарифі.
 2. У панелі проєкту відкрийте **Authentication → Sign In / Providers → Email** і **вимкніть `Confirm email`**, щоб реєстрація одразу створювала активну сесію без підтвердження пошти. *(Кошики Storage у проєкті не використовуються.)*
-3. У терміналі виконайте вхід, прив'язку до проєкту (20-літерний `<project-ref>` з URL панелі Supabase) та накатіть усі 6 міграцій із каталогу `supabase/migrations/`:
+3. У терміналі виконайте вхід, прив'язку до проєкту (20-літерний `project-ref` із URL панелі Supabase або з виводу `npx supabase projects list` — **без кутових дужок `< >`**) та накатіть усі 7 міграцій із каталогу `supabase/migrations/`:
    ```bash
    npx supabase login
-   npx supabase link --project-ref <project-ref>
+   npx supabase projects list
+   npx supabase link --project-ref ВСТАВТЕ_PROJECT_REF_БЕЗ_ДУЖОК
    npx supabase db push
    ```
    У каталозі `supabase/migrations/` містяться міграції:
@@ -75,11 +76,12 @@ GEMINI_MODEL=
    - `20261122233652_add_realtime_upgrades.sql`
    - `20261123142414_ai_guard.sql`
    - `20261126123506_policy_fixes.sql`
+   - `20261127122300_grant_helper_functions.sql`
 4. Перевірте синхронізацію міграцій:
    ```bash
    npx supabase migration list
    ```
-   Усі 6 міграцій мають відображатися в обох колонках (`Local` і `Remote`).
+   Усі 7 міграцій мають відображатися в обох колонках (`Local` і `Remote`).
 
 ## 8. Тестові акаунти й дані
 1. У панелі Supabase перейдіть до **Authentication → Users → Add user → Create new user**.
